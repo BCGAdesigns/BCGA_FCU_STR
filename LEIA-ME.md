@@ -13,7 +13,7 @@
 
 ## O que é a BCGA FCU?
 
-A **BCGA FCU** é uma Fire Control Unit digital para replicas airsoft HPA (High Pressure Air), baseada no ESP32-C3 SuperMini. Ela controla o(s) solenoide(s) que substituem o gatilho mecânico da gearbox HPA e permite ajustar cada fase do ciclo de disparo pelo browser via WiFi — sem precisar de app.
+A **BCGA FCU** é uma Fire Control Unit digital para replicas airsoft HPA (High Pressure Air), baseada no ESP32-C3 SuperMini. Ela controla o(s) solenoide(s) que substituem o gatilho mecânico do engine HPA e permite ajustar cada fase do ciclo de disparo pelo browser via WiFi — sem precisar de app.
 
 Duas variantes de hardware compartilham o mesmo firmware e a mesma interface web:
 
@@ -82,7 +82,7 @@ Comparada com FCUs comerciais (PolarStar REV3, Wolverine BLINC, GATE TITAN II, G
 ```
 BCGA_FCU_STR/
 ├── MotherBoard/              # Placa principal (MOBO) — BOM, CPL, GERBER, SCH, STEP
-├── DaugtherBoard_BCGA/       # Daughterboard A — gearbox BCGA (S8PA ou D8PA)
+├── DaugtherBoard_BCGA/       # Daughterboard A — engine BCGA (S8PA ou D8PA)
 ├── Gearbox_DaughterBoard/    # Daughterboard B — V2 standard (conversão AEG)
 ├── firmware/
 │   ├── BCGA_FCU_STR/         # Sketch Arduino — variante Starter

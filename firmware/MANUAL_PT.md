@@ -11,8 +11,8 @@ Esse manual é prático: cada seção começa com **o que mexer para obter o qu�
 ## Índice
 
 1. [Entendendo a FCU em 1 minuto](#1-entendendo-a-fcu-em-1-minuto)
-2. [Os 4 timings — guia de tuning](#2-os-4-timings--guia-de-tuning)
-3. [Início rápido — chegar no FPS alvo primeiro](#3-inicio-rapido--chegar-no-fps-alvo-primeiro)
+2. [Início rápido — chegar no FPS alvo primeiro](#2-inicio-rapido--chegar-no-fps-alvo-primeiro)
+3. [Os 4 timings — guia de tuning](#3-os-4-timings--guia-de-tuning)
 4. [Fluxo recomendado de tuning](#4-fluxo-recomendado-de-tuning)
 5. [Tipo de disparo: S8PA vs D8PA](#5-tipo-de-disparo-s8pa-vs-d8pa)
 6. [Seletor — 2 ou 3 posições](#6-seletor--2-ou-3-posicoes)
@@ -31,20 +31,39 @@ Esse manual é prático: cada seção começa com **o que mexer para obter o qu�
 
 ## 1. Entendendo a FCU em 1 minuto
 
-A FCU controla **1 ou 2 solenoides** que substituem o gatilho mecânico de uma gearbox HPA. Em cada tiro, ela envia pulsos eletricamente calibrados para os solenoides, na ordem correta, com as esperas corretas entre eles. Tuning = ajustar esses pulsos para o teu sistema específico (pressão, bucking, BB, peso).
+A FCU controla **1 ou 2 solenoides** que substituem o gatilho mecânico de um engine HPA. Em cada tiro, ela envia pulsos eletricamente calibrados para os solenoides, na ordem correta, com as esperas corretas entre eles. Tuning = ajustar esses pulsos para o teu sistema específico (pressão, bucking, BB, peso).
 
-- **S8PA** (1 solenoide): PolarStar JACK / F1, Wolverine INFERNO, GATE PULSAR S, ou qualquer outra gearbox de 1 solenoide. Só o poppet é controlado.
-- **D8PA** (2 solenoides): PolarStar F2 / Fusion Engine, GATE PULSAR D, ou qualquer outra gearbox de 2 solenoides. Nozzle + poppet controlados separadamente.
+- **S8PA** (1 solenoide): PolarStar JACK / F1, Wolverine INFERNO, GATE PULSAR S, ou qualquer outro engine HPA de 1 solenoide. Só o poppet é controlado.
+- **D8PA** (2 solenoides): PolarStar F2 / Fusion Engine, GATE PULSAR D, ou qualquer outro engine HPA de 2 solenoides. Nozzle + poppet controlados separadamente.
 
 ---
 
-## 2. Os 4 timings — guia de tuning
+## 2. Início rápido — chegar no FPS alvo primeiro
+
+Primeira vez na BCGA FCU? Antes de tudo, acerte o FPS alvo. O resto do tuning só faz sentido com o chrono onde você quer. Os 4 timings (DN/DR/DP/DB) estão explicados na seção 3 — nessa primeira passada você só mexe no **DP** (o slider do poppet dwell) e no regulador.
+
+1. **Coloque o regulador em 100 psi.** Pressão inicial padrão para a maioria dos setups D8PA.
+2. **Mantenha os timings default** (`DN=18 / DR=26 / DP=25 / DB=100`). Já vêm assim de fábrica.
+3. **Atire no chrono.** O FPS (ou joule) está no alvo?
+   - **Sim** → pule direto pra seção 4 e ajuste alimentação, vedação e precisão.
+   - **Não, abaixo do alvo** → passo 4.
+4. **Suba o DP até o máximo do slider** (80 ms). Chrono de novo.
+   - **FPS subiu pro alvo** → abaixe o DP passo a passo até o FPS começar a cair, depois volte 1–2 ms. Esse é o seu DP mínimo eficiente. Vá pra seção 4.
+   - **FPS ainda baixo** → passo 5.
+5. **Aumente o regulador pra 110 psi.** Chrono de novo.
+   - **No alvo** → abaixe o DP até achar o mínimo que segura o FPS alvo. Vá pra seção 4.
+   - **Ainda baixo** → suba pra **120 psi** e chrono de novo.
+6. Com FPS alvo estável, **vá pra seção 4** e ajuste DN (alimentação), DR (vedação) e DB (precisão) nessa ordem.
+
+> **Princípio:** FPS é dado principalmente por **pressão × DP**. Os outros 3 timings moldam *como* o ciclo se comporta (alimentação, vedação, precisão, ROF) — não somam FPS. Acerte o FPS primeiro com DP/pressão, ajuste o resto depois.
+
+---
+
+## 3. Os 4 timings — guia de tuning
 
 A FCU expõe **4 timings independentes** que mapeiam diretamente para cada fase física do ciclo de disparo: **DN**, **DR**, **DP**, **DB**. A página mostra o ROF teórico em tempo real enquanto você mexe nos sliders.
 
 > **Nota sobre unidades:** DN, DR e DP estão em **milissegundos** (faixa 2–80 ms). O **DB** (Trigger Debounce) usa **units** — 1 unit = 0,1 ms, faixa 20–800 units (= 2–80 ms). Isso alinha o DB à resolução interna de 0,1 ms do firmware.
-
-> **Nota sobre o rename:** o parâmetro agora chamado **DB (Trigger Debounce)** era anteriormente **DL (Post-shot Delay)**. O comportamento físico é idêntico — só mudou o nome e a unidade exibida.
 
 ### DN — Nozzle Dwell (só D8PA)
 
@@ -85,8 +104,6 @@ Duração do pulso do **poppet (SOL1)**. É quanto tempo o ar pode fluir pelo no
 
 ### DB — Trigger Debounce (só D8PA)
 
-> Antigamente **DL — Post-shot Delay**. Mesmo comportamento, novo nome e nova unidade.
-
 Espera após o poppet fechar, antes do gatilho poder armar o próximo ciclo. Fisicamente é o tempo para a **BB sair do cano** e o bucking se recuperar.
 
 **Unidade:** 1 unit = 0,1 ms. **Faixa:** 20–800 units (2–80 ms). **Default:** 100 units (10 ms).
@@ -117,30 +134,9 @@ Ponto de partida seguro. Ajuste a partir daí.
 
 ---
 
-## 3. Início rápido — chegar no FPS alvo primeiro
-
-Primeira vez na BCGA FCU? Antes de tudo, acerte o FPS alvo. O resto do tuning só faz sentido com o chrono onde você quer.
-
-1. **Coloque o regulador em 100 psi.** Pressão inicial padrão para a maioria dos setups D8PA.
-2. **Mantenha os timings default** (`DN=18 / DR=26 / DP=25 / DB=100`). Já vêm assim de fábrica.
-3. **Atire no chrono.** O FPS (ou joule) está no alvo?
-   - **Sim** → pule direto pra seção 4 e ajuste alimentação, vedação e precisão.
-   - **Não, abaixo do alvo** → passo 4.
-4. **Suba o DP até o máximo do slider** (80 ms). Chrono de novo.
-   - **FPS subiu pro alvo** → abaixe o DP passo a passo até o FPS começar a cair, depois volte 1–2 ms. Esse é o seu DP mínimo eficiente. Vá pra seção 4.
-   - **FPS ainda baixo** → passo 5.
-5. **Aumente o regulador pra 110 psi.** Chrono de novo.
-   - **No alvo** → abaixe o DP até achar o mínimo que segura o FPS alvo. Vá pra seção 4.
-   - **Ainda baixo** → suba pra **120 psi** e chrono de novo.
-6. Com FPS alvo estável, **vá pra seção 4** e ajuste DN (alimentação), DR (vedação) e DB (precisão) nessa ordem.
-
-> **Princípio:** FPS é dado principalmente por **pressão × DP**. Os outros 3 timings moldam *como* o ciclo se comporta (alimentação, vedação, precisão, ROF) — não somam FPS. Acerte o FPS primeiro com DP/pressão, ajuste o resto depois.
-
----
-
 ## 4. Fluxo recomendado de tuning
 
-Siga nesta ordem — cada passo depende do anterior estar estável. Assume que você já atingiu o FPS alvo pela seção 3.
+Siga nesta ordem — cada passo depende do anterior estar estável. Assume que você já atingiu o FPS alvo pela seção 2.
 
 1. **Alimentação (DN)** — dispare SEMI lento. Diminua DN até pegar tiro vazio. Volte 2 ms.
 2. **Vedação (DR)** — dispare SEMI rápido. Se o chrono oscilar, aumente DR 2 ms.
@@ -157,7 +153,7 @@ Siga nesta ordem — cada passo depende do anterior estar estável. Assume que v
 
 Escolhido por slot, na primeira seção do painel.
 
-- **S8PA** — só o poppet é pulsado. Ciclo: `DP → DR → repete`. Use com PolarStar JACK / F1, Wolverine INFERNO, GATE PULSAR S, ou qualquer gearbox de 1 solenoide. Os campos DN, DB, swap MOS e o botão de teste do SOL 2 somem da interface.
+- **S8PA** — só o poppet é pulsado. Ciclo: `DP → DR → repete`. Use com PolarStar JACK / F1, Wolverine INFERNO, GATE PULSAR S, ou qualquer engine HPA de 1 solenoide. Os campos DN, DB, swap MOS e o botão de teste do SOL 2 somem da interface.
 - **D8PA** — nozzle + poppet separados. Ciclo: `DN → DR → DP → DB → repete`. Use com PolarStar F2 / Fusion Engine, GATE PULSAR D, ou qualquer sistema com 2 solenoides.
 
 ---

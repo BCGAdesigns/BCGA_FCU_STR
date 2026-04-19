@@ -24,6 +24,7 @@ Esse manual é prático: cada seção começa com **o que mexer para obter o qu�
 12. [Diagnóstico e WiFi](#12-diagnostico-e-wifi)
 13. [Deep sleep e modo debug](#13-deep-sleep-e-modo-debug)
 14. [Diferenças STR vs PRO](#14-diferencas-str-vs-pro)
+15. [BCGA FCU vs FCUs comerciais](#15-bcga-fcu-vs-fcus-comerciais)
 
 ---
 
@@ -38,7 +39,11 @@ A FCU controla **1 ou 2 solenoides** que substituem o gatilho mecânico de uma g
 
 ## 2. Os 4 timings — guia de tuning
 
-Todos em **milissegundos**, faixa permitida **2–80 ms** por campo. A página mostra o ROF teórico em tempo real.
+A FCU expõe **4 timings independentes** que mapeiam diretamente para cada fase física do ciclo de disparo: **DN**, **DR**, **DP**, **DB**. A página mostra o ROF teórico em tempo real enquanto você mexe nos sliders.
+
+> **Nota sobre unidades:** DN, DR e DP estão em **milissegundos** (faixa 2–80 ms). O **DB** (Trigger Debounce) usa **units** — 1 unit = 0,1 ms, faixa 20–800 units (= 2–80 ms). Isso alinha o DB à resolução interna de 0,1 ms do firmware.
+
+> **Nota sobre o rename:** o parâmetro agora chamado **DB (Trigger Debounce)** era anteriormente **DL (Post-shot Delay)**. O comportamento físico é idêntico — só mudou o nome e a unidade exibida.
 
 ### DN — Nozzle Dwell (só D8PA)
 
@@ -77,22 +82,34 @@ Duração do pulso do **poppet (SOL1)**. É quanto tempo o gás pode fluir pelo 
 
 **Regra prática:** com chrono, ajuste DP até chegar ao FPS alvo. Mais que isso é só desperdício.
 
-### DL — Post-shot Delay (só D8PA)
+### DB — Trigger Debounce (só D8PA)
 
-Espera após o poppet fechar. É o tempo para a **BB sair do cano** antes do próximo ciclo.
+> Antigamente **DL — Post-shot Delay**. Mesmo comportamento, novo nome e nova unidade.
 
-| Se DL aumenta | Se DL diminui |
+Espera após o poppet fechar, antes do gatilho poder armar o próximo ciclo. Fisicamente é o tempo para a **BB sair do cano** e o bucking se recuperar.
+
+**Unidade:** 1 unit = 0,1 ms. **Faixa:** 20–800 units (2–80 ms). **Default:** 100 units (10 ms).
+
+| Units | Equivalente em ms |
+|---:|---:|
+| 20  | 2,0  |
+| 50  | 5,0  |
+| 100 | 10,0 |
+| 200 | 20,0 |
+| 800 | 80,0 |
+
+| Se DB aumenta | Se DB diminui |
 |---|---|
 | ✅ **melhor precisão** (BB já saiu quando o próximo nozzle abre) | ✅ **ROF mais alto** |
 | ✅ bucking recupera forma sem perturbação | ❌ BB ainda dentro do cano quando o próximo nozzle pulsa → **flyers / FPS inconsistente** |
 | ❌ ROF mais baixo | ❌ vida útil reduzida do bucking |
 
-**Regra prática:** atire em full-auto num alvo a 20 m. Se aparecerem flyers, aumente DL 2 ms por vez.
+**Regra prática:** atire em full-auto num alvo a 20 m. Se aparecerem flyers, aumente DB 20 units (2 ms) por vez.
 
 ### Defaults (D8PA genérico, Jack-style, 110 psi, BB 0.28)
 
 ```
-DN = 18 ms    DR = 26 ms    DP = 25 ms    DL = 10 ms
+DN = 18 ms    DR = 26 ms    DP = 25 ms    DB = 100 units (10 ms)
 ```
 
 Ponto de partida seguro. Ajuste a partir daí.
@@ -106,7 +123,7 @@ Siga nesta ordem — cada passo depende do anterior estar estável.
 1. **Alimentação (DN)** — dispare SEMI lento. Diminua DN até pegar tiro vazio. Volte 2 ms.
 2. **Vedação (DR)** — dispare SEMI rápido. Se o chrono oscilar, aumente DR 2 ms.
 3. **FPS (DP)** — com chrono, ajuste DP até atingir o alvo. Não suba mais que o necessário.
-4. **Precisão (DL, só D8PA)** — full-auto em alvo. Se flyers, aumente DL.
+4. **Precisão (DB, só D8PA)** — full-auto em alvo. Se flyers, aumente DB em 20 units.
 5. **Cadência (ROF limit)** — opcional. Limita o ROF máximo independentemente dos timings.
 6. **Anti-spam (Semi ROF)** — opcional. Define tempo mínimo entre puxadas em SEMI.
 
@@ -118,8 +135,8 @@ Siga nesta ordem — cada passo depende do anterior estar estável.
 
 Escolhido por slot, na primeira seção do painel.
 
-- **S8PA** — só o poppet é pulsado. Ciclo: `DP → DR → repete`. Use com F2, Pulsar, ou qualquer gearbox de 1 solenoide. Os campos DN, DL, swap MOS e o botão de teste do SOL 2 somem da interface.
-- **D8PA** — nozzle + poppet separados. Ciclo: `DN → DR → DP → DL → repete`. Use com Jack, Backdraft, e qualquer sistema com 2 solenoides.
+- **S8PA** — só o poppet é pulsado. Ciclo: `DP → DR → repete`. Use com F2, Pulsar, ou qualquer gearbox de 1 solenoide. Os campos DN, DB, swap MOS e o botão de teste do SOL 2 somem da interface.
+- **D8PA** — nozzle + poppet separados. Ciclo: `DN → DR → DP → DB → repete`. Use com Jack, Backdraft, e qualquer sistema com 2 solenoides.
 
 ---
 
@@ -233,7 +250,7 @@ Ao ligar pela primeira vez (ou após flashar uma build nova que mudou schema), a
 - 3 slots nomeados `Slot 1`, `Slot 2`, `Slot 3`
 - D8PA, 2-pos, Pos1=SEMI, Pos2=FULL
 - Gatilho digital (microswitch, active-LOW)
-- Timings `DN=18 / DR=26 / DP=25 / DL=10`
+- Timings `DN=18 ms / DR=26 ms / DP=25 ms / DB=100 units (10 ms)`
 - SSID = `BCGA_FCU_STR` ou `BCGA_FCU_PRO`
 - Senha WiFi = `12345678`
 
@@ -305,7 +322,7 @@ Use com multímetro, LED, ou solenoide para verificar fiação.
 
 ### Buzzer test
 
-Toca cada tipo de beep. Útil para identificar sons antes de sair pra jogar.
+Toca cada tipo de beep. Útil para identificar sons antes de sair pra jogar. No STR o piezo não vem populado de fábrica; o código continua rodando mas fica mudo a menos que você adicione um piezo no PIN_BUZZER.
 
 ### Trocar senha WiFi
 
@@ -350,6 +367,70 @@ Timeout cai de 60 min para 5 min. **Re-comente antes de entregar para produção
 | **Kill latch** (protege LiPo de descarga profunda) | ❌ | ✅ |
 | **Botão WiFi dedicado** | ❌ | ✅ |
 | **Buzzer onboard** | ❌ | ✅ |
+
+---
+
+## 15. BCGA FCU vs FCUs comerciais
+
+Esta seção compara a BCGA FCU com as principais FCUs comerciais do mercado airsoft HPA (PolarStar REV3, Wolverine BLINC, GATE TITAN II). É uma avaliação factual — inclui vantagens e lacunas honestas.
+
+### 15.1 Onde a BCGA FCU ganha
+
+1. **WiFi nativo vs Bluetooth.** Configure pelo browser de qualquer dispositivo — iOS, Android, PC, Linux, qualquer coisa que abra uma página web. Sem instalar app, sem pareamento, sem vendor lock-in. O TITAN II (BLE 5.2) e o BLINC exigem apps proprietários específicos.
+
+2. **4 timings independentes (DN/DR/DP/DB).** Cada fase do ciclo D8PA tem seu próprio parâmetro. Alimentação (DN), vedação (DR), FPS (DP) e debounce pós-tiro (DB) são ajustados separadamente sem trade-offs. FCUs comerciais single-solenoid usam dwell único.
+
+3. **Calibração automática de ruído EMI no gatilho Hall.** Única FCU do mercado com rotina que dispara os solenoides a seco e mede o chute EMI no ADC, alargando automaticamente o deadband do Hall. Elimina ghost fires sem sacrificar sensibilidade.
+
+4. **3 slots completos e independentes.** Cada slot armazena **tudo** — tipo de engine, os 4 timings, configuração de selector, calibrações Hall individuais, flags. Trocar slot = trocar perfil de jogo completo.
+
+5. **Open-source, GPL v3.** Código totalmente aberto. Auditar, modificar, compilar e flashar sem depender de firmware proprietário ou app do fabricante. TITAN II, BLINC e REV3 são fechados.
+
+6. **Gatilho Hall com calibração de 2 pontos + histerese automática.** Captura o ponto exato de disparo e calcula banda de histerese a partir de medições reais — não valores fixos. Sem potenciômetro mecânico.
+
+7. **Seletor Hall de 3 posições.** SAFE/SEMI/FULL via sensor Hall sem desgaste mecânico. Cada posição livre para qualquer modo (inclusive BURST 2/3/4).
+
+8. **BOM drasticamente mais barato.** O STR pode ser construído com componentes THT fáceis de achar por uma fração do custo de qualquer FCU Bluetooth comercial.
+
+9. **ROF teórico em tempo real na UI.** O painel web mostra o ROF máximo alcançável enquanto você mexe nos sliders — sem cronógrafo para uma estimativa inicial.
+
+10. **Suporte nativo D8PA + S8PA por slot.** Cada slot é independentemente S8PA ou D8PA. FCUs 3rd party (Gorilla, TITAN II) exigem chicotes adaptadores para controlar um engine de dois solenoides.
+
+### 15.2 Limitações honestas
+
+Quem está comprando precisa saber disto antes de escolher a BCGA FCU:
+
+1. **Sem binary trigger.** Não implementado. Presente no Wolverine BLINC, GATE TITAN II e Gorilla FCU.
+2. **Sem tournament lock com senha.** Contorno: configurar Semi ROF alto + ROF limit baixo antes do evento. Presente no TITAN II (Expert) e Gorilla.
+3. **Kill latch e buzzer integrado apenas no PRO.** A variante STR não tem leitura de bateria nem corte de LiPo. Use com cuidado em packs 2S/3S sem proteção externa.
+4. **Primeira puxada após deep sleep acorda via reboot.** Após 60 min de inatividade, a FCU entra em deep-sleep. A próxima puxada acorda o MCU por reboot completo — a **segunda** puxada é a que dispara. Diferente de FCUs que dormem por gate-hold do MOSFET.
+
+### 15.3 Comparativo lado-a-lado
+
+| Dimensão | BCGA FCU STR/PRO | PolarStar REV3 | Wolverine BLINC | GATE TITAN II |
+|---|---|---|---|---|
+| MCU | ESP32-C3 | Proprietário | Proprietário | ARM + BLE 5.2 |
+| Licença | **GPL v3 (open-source)** | Proprietária | Proprietária | Proprietária |
+| Dual-solenoid | ✅ (D8PA) | ✅ (FCFE) | ❌ | ✅ (PULSAR D) |
+| Timings independentes | **4 (DN/DR/DP/DB)** | 3 (dual) / 1 (single) | 1 + autotune | Auto sync ou manual |
+| Interface | **Web UI via WiFi** | LCD + joystick | App BLE | App BLE 5.2 |
+| App necessário | **Não** | Não | ✅ obrigatório | ✅ obrigatório |
+| Hall noise calibration | **✅ única no mercado** | ❌ | ❌ | ❌ |
+| Slots de configuração | **3 completos** | 1 set | 1 perfil | Perfis por engine |
+| Binary trigger | ❌ | Hack | ✅ | ✅ |
+| Tournament lock | ❌ | — | ❌ | ✅ Expert |
+| Custo aproximado | **~R$50–100 BOM** | ~US$80 FCU | ~US$160 | ~US$300–440 combo |
+| Deep sleep | ✅ 60 min | — | ✅ | ✅ |
+
+### 15.4 Para quem é a BCGA FCU
+
+- **Builders DIY HPA** que querem controle total sobre o ciclo de disparo com 4 timings independentes.
+- **Instaladores de campo** sem um app Bluetooth específico no celular — qualquer browser serve.
+- **Makers com orçamento apertado** construindo um engine S8PA/D8PA do zero.
+- **Defensores de open-source** que não aceitam rifle com firmware fechado.
+- **Quem quer 3 perfis distintos de jogo** numa única FCU (skirmish, DMR, CQB).
+
+A BCGA FCU **não** é a escolha certa se você precisa de binary trigger ou tournament lock com senha de fábrica — para isso pegue TITAN II ou BLINC.
 
 ---
 

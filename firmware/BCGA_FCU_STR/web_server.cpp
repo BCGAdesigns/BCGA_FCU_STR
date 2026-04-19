@@ -12,6 +12,10 @@
 #include <WebServer.h>
 #include <ArduinoJson.h>
 
+// Exported by BCGA_FCU_STR.ino — read-only trigger state for /trigstate.
+extern bool     webServerGetTrigPressed();
+extern uint32_t webServerGetTrigEvents();
+
 namespace {
 WebServer server(HTTP_PORT);
 bool running = false;
@@ -58,19 +62,24 @@ void handleLoad() {
 
 void slotToJson(const SlotConfig& c, JsonObject d) {
   d["name"]        = c.name;
+  d["solenoids"]   = c.solenoidCount;
   d["trigMode"]    = c.trigMode;
   d["selMode"]     = c.selMode;
   d["sel3pos"]     = c.sel3pos;
   d["selPos1"]     = c.selPos1Mode;
   d["selPos2"]     = c.selPos2Mode;
   d["selPos3"]     = c.selPos3Mode;
+  d["dn"]          = c.dn;
   d["dr"]          = c.dr;
   d["dp"]          = c.dp;
+  d["dl"]          = c.dl;
   d["rof"]         = c.rofLimit;
+  d["semiRofMs"]   = c.semiRofMs;
   d["hallTrigLow"] = c.hallTrigLow;
   d["hallTrigHigh"]= c.hallTrigHigh;
   d["hallSelLow1"] = c.hallSelLow1;
   d["hallSelLow2"] = c.hallSelLow2;
+  d["mosfetSwap"]  = c.mosfetSwap;
   d["invertTrig"]  = c.invertTrig;
   d["silent"]      = c.silentMode;
 }
@@ -95,7 +104,7 @@ void handleSave() {
   uint8_t i = (uint8_t)server.arg("i").toInt();
   if (i >= SLOT_COUNT)          { sendErr(400, "i out of range"); return; }
 
-  StaticJsonDocument<768> body;
+  StaticJsonDocument<1024> body;
   DeserializationError e = deserializeJson(body, server.arg("plain"));
   if (e) { sendErr(400, "bad json"); return; }
 
@@ -108,19 +117,24 @@ void handleSave() {
       c.name[sizeof(c.name) - 1] = '\0';
     }
   }
+  if (body.containsKey("solenoids"))   c.solenoidCount = (body["solenoids"] == 2) ? 2 : 1;
   if (body.containsKey("trigMode"))    c.trigMode    = (uint8_t)constrain((int)body["trigMode"], 0, 1);
   if (body.containsKey("selMode"))     c.selMode     = (uint8_t)constrain((int)body["selMode"], 0, 1);
   if (body.containsKey("sel3pos"))     c.sel3pos     = body["sel3pos"] ? 1 : 0;
   if (body.containsKey("selPos1"))     c.selPos1Mode = (uint8_t)constrain((int)body["selPos1"], 0, 5);
   if (body.containsKey("selPos2"))     c.selPos2Mode = (uint8_t)constrain((int)body["selPos2"], 0, 5);
   if (body.containsKey("selPos3"))     c.selPos3Mode = (uint8_t)constrain((int)body["selPos3"], 0, 5);
+  if (body.containsKey("dn"))          c.dn  = clampU((uint16_t)body["dn"],  FIRE_MIN_MS, FIRE_MAX_MS);
   if (body.containsKey("dr"))          c.dr  = clampU((uint16_t)body["dr"],  FIRE_MIN_MS, FIRE_MAX_MS);
   if (body.containsKey("dp"))          c.dp  = clampU((uint16_t)body["dp"],  FIRE_MIN_MS, FIRE_MAX_MS);
+  if (body.containsKey("dl"))          c.dl  = clampU((uint16_t)body["dl"],  FIRE_MIN_MS, FIRE_MAX_MS);
   if (body.containsKey("rof"))         c.rofLimit   = (uint16_t)constrain((int)body["rof"], 0, 50);
+  if (body.containsKey("semiRofMs"))   c.semiRofMs  = (uint16_t)constrain((int)body["semiRofMs"], 0, 500);
   if (body.containsKey("hallTrigLow"))  c.hallTrigLow  = clampU((uint16_t)body["hallTrigLow"], 0, 4095);
   if (body.containsKey("hallTrigHigh")) c.hallTrigHigh = clampU((uint16_t)body["hallTrigHigh"], 0, 4095);
   if (body.containsKey("hallSelLow1"))  c.hallSelLow1  = clampU((uint16_t)body["hallSelLow1"], 0, 4095);
   if (body.containsKey("hallSelLow2"))  c.hallSelLow2  = clampU((uint16_t)body["hallSelLow2"], 0, 4095);
+  if (body.containsKey("mosfetSwap"))  c.mosfetSwap = body["mosfetSwap"] ? 1 : 0;
   if (body.containsKey("invertTrig"))  c.invertTrig = body["invertTrig"] ? 1 : 0;
   if (body.containsKey("silent"))      c.silentMode = body["silent"]    ? 1 : 0;
 
@@ -146,9 +160,9 @@ void handleTest() {
   } else if (body.containsKey("mos")) {
     int which = body["mos"];
     if (firingActive()) { sendErr(409, "firing active"); return; }
-    // Starter has only SOL1 (poppet) wired. "mos: 1" pulses PIN_MOS_1.
-    if (which != 1) { sendErr(400, "bad mos"); return; }
-    mosTestSchedule(PIN_MOS_1);
+    if (which == 1)      mosTestSchedule(PIN_MOS_1);
+    else if (which == 2) mosTestSchedule(PIN_MOS_2);
+    else                 { sendErr(400, "bad mos"); return; }
   } else { sendErr(400, "missing buzz/mos"); return; }
   StaticJsonDocument<64> r; r["ok"] = true; sendJson(200, r);
 }
@@ -235,6 +249,17 @@ void handleResetSlot() {
   sendJson(200, r);
 }
 
+void handleTrigState() {
+  // Read-only endpoint. Returns the current logical trigger state and a
+  // monotonically-increasing edge counter so the dashboard can render the
+  // trigger test without ever firing.
+  StaticJsonDocument<96> r;
+  r["ok"]      = true;
+  r["pressed"] = webServerGetTrigPressed();
+  r["events"]  = webServerGetTrigEvents();
+  sendJson(200, r);
+}
+
 void handleNotFound() {
   handleRoot();
 }
@@ -247,6 +272,7 @@ void webServerBegin() {
   server.on("/load",     HTTP_GET,  handleLoad);
   server.on("/getslot",  HTTP_GET,  handleGetSlot);
   server.on("/halllive", HTTP_GET,  handleHallLive);
+  server.on("/trigstate",HTTP_GET,  handleTrigState);
   server.on("/save",     HTTP_POST, handleSave);
   server.on("/test",     HTTP_POST, handleTest);
   server.on("/noisecal", HTTP_POST, handleNoiseCal);

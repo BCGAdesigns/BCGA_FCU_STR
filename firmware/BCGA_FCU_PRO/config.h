@@ -19,22 +19,23 @@
 // PIN MAP — ESP32-C3 SuperMini
 // ============================================================================
 // Inputs
-#define PIN_TRIG     0   // Trigger (Switch digital OR Hall analog)
-#define PIN_SEL      1   // Selector (Switch digital OR Hall analog)
-#define PIN_VBAT     2   // Battery voltage divider (ADC1_CH2)
+#define PIN_TRIG     0   // Trigger (Switch digital OR Hall analog), ADC1_CH0
+#define PIN_SEL      1   // Selector (Switch digital OR Hall analog), ADC1_CH1
 #define PIN_WIFI_BTN 3   // WiFi enable momentary button (active LOW, INPUT_PULLUP)
+#define PIN_VBAT     4   // Battery voltage divider (ADC1_CH4)
 
 // Outputs
 #define PIN_MOS_1    8   // MOSFET 1 — SOL1 / Poppet (also onboard LED, inverted)
 #define PIN_MOS_2    7   // MOSFET 2 — SOL2 / Nozzle
-#define PIN_LATCH    4   // Self-kill latch (HIGH=alive, LOW=cut)
+#define PIN_LATCH   21   // Self-kill latch (HIGH=alive, LOW=cut)
 #define PIN_BUZZER  10   // 3V3 piezo buzzer (MLT-5020)
 
 // Reserved (do not use)
-// GPIO 5, 6  — reserved for future OLED (I2C SDA/SCL)
-// GPIO 9     — boot strap (avoid)
+// GPIO 5, 6  — hardwired to integrated OLED (I2C SDA/SCL)
+// GPIO 9     — boot strap / BOOT button (avoid)
 // GPIO 18,19 — USB D+/D- (avoid)
-// GPIO 20,21 — UART0 (logging)
+// GPIO 20    — UART0 RX (logging)
+// GPIO 21    — PIN_LATCH (mapped above)
 
 // ============================================================================
 // LEDC (PWM) CHANNELS
@@ -59,6 +60,7 @@
 #define DEFAULT_DL_MS      10   // Post-shot delay (D8PA only)
 #define DEFAULT_ROF_LIMIT   0   // 0 = unlimited
 #define DEFAULT_SOLENOIDS   2   // 1 = S8PA, 2 = D8PA
+#define DEFAULT_SEMI_ROF_MS 0   // 0 = disabled; ms to ignore trigger after semi shot
 
 // ============================================================================
 // SLOTS
@@ -68,16 +70,17 @@
 // ============================================================================
 // BATTERY
 // ============================================================================
-// Voltage divider: VBAT --[R1=100k]--+--[R2=33k]-- GND, tap at PIN_VBAT
-// Vadc = Vbat * R2/(R1+R2) = Vbat * 0.248
-#define VBAT_DIV_NUM   33
-#define VBAT_DIV_DEN   133
+// Voltage divider: VBAT --[R16=33k]--+--[R17=10k]-- GND, tap at PIN_VBAT
+// Vadc = Vbat * R17/(R16+R17) = Vbat * 10/43
+#define VBAT_DIV_NUM   10
+#define VBAT_DIV_DEN   43
 #define ADC_REF_MV    3300
 #define ADC_RESOLUTION 4095   // 12-bit
 // Thresholds (mV per cell)
-#define CELL_NOMINAL_MV  3700
-#define CELL_WARN_MV     3500
-#define CELL_CUT_MV      3200
+#define CELL_NOMINAL_MV   3700
+#define CELL_WARN_MV      3500   // LOW — 6 beeps/min
+#define CELL_CRITICAL_MV  3200   // CRITICAL — 12 beeps/min
+#define CELL_CUT_MV       3000   // CUT — kill latch immediately
 // Cell count detection: 2S (>5.5V & <9V) | 3S (>=9V)
 #define V_2S_3S_BOUNDARY_MV 9000
 #define V_MIN_VALID_MV      5500
@@ -101,6 +104,15 @@
 // MOSFET diagnostic test duration (single click pulses for this long)
 #define MOS_TEST_DURATION_MS 2000
 #define WIFI_AUTO_OFF_MS    (10UL * 60UL * 1000UL)   // 10 minutes
+
+// Deep-sleep inactivity timer. Enable DEEP_SLEEP_DEBUG to shorten it to 5 min
+// while bench-testing; leave commented out in production.
+//#define DEEP_SLEEP_DEBUG
+#ifdef DEEP_SLEEP_DEBUG
+  #define DEEP_SLEEP_TIMEOUT_MS (5UL  * 60UL * 1000UL) //  5 minutes (debug)
+#else
+  #define DEEP_SLEEP_TIMEOUT_MS (60UL * 60UL * 1000UL) // 60 minutes (prod)
+#endif
 #define WIFI_GESTURE_PULL_COUNT 5
 #define WIFI_GESTURE_WINDOW_MS  3000
 #define DNS_PORT            53

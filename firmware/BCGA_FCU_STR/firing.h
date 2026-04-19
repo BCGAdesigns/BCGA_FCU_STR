@@ -1,7 +1,9 @@
 // BCGA FCU STR — firing.h
-// Non-blocking firing engine for S8PA (single solenoid).
-// Cycle: SOL1 pulse DP → wait DR → repeat.
-// Hardware assumed active-HIGH for the MOSFET (no invert).
+// Non-blocking firing engine for S8PA (single) and D8PA (dual) solenoids.
+// Cycle order:
+//   D8PA: SOL2 pulse DN → wait DR → SOL1 pulse DP → wait DL → repeat.
+//   S8PA: SOL1 pulse DP → wait DR → repeat.
+// Hardware assumed active-HIGH for both MOSFETs (no invert).
 
 #pragma once
 
@@ -15,8 +17,16 @@ void firingUpdate(const SlotConfig& cfg, FireMode mode);
 bool firingActive();
 void firingForceStop();         // emergency stop
 uint32_t firingShotCount();     // total shots since boot
+// Returns true while the semi-ROF cap is still blocking a new trigger press.
+// cfg.semiRofMs = 0 disables the cap (always returns false).
+bool firingIsSemiBlocked(const SlotConfig& cfg);
 
-inline uint8_t pinPoppet(const SlotConfig& cfg) { (void)cfg; return PIN_MOS_1; }
+inline uint8_t pinPoppet(const SlotConfig& cfg) {
+  return cfg.mosfetSwap ? PIN_MOS_2 : PIN_MOS_1;
+}
+inline uint8_t pinNozzle(const SlotConfig& cfg) {
+  return cfg.mosfetSwap ? PIN_MOS_1 : PIN_MOS_2;
+}
 
 // Non-blocking MOSFET test (web diagnostic). Pulses the named pin for
 // MOS_TEST_DURATION_MS. Refuses if firing is active.

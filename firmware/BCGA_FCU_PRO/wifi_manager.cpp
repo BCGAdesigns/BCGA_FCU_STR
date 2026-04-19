@@ -15,10 +15,6 @@ bool      active     = false;
 uint32_t  startMs    = 0;
 uint32_t  lastActMs  = 0;
 
-// gesture
-uint8_t   pullCount  = 0;
-uint32_t  pullWindow = 0;
-
 void doStart() {
   if (active) return;
   char pwd[33]; storageGetWifiPass(pwd, sizeof(pwd));
@@ -60,36 +56,65 @@ void wifiStop()          { doStop(); }
 bool wifiActive()        { return active; }
 void wifiNoteActivity()  { if (active) lastActMs = millis(); }
 
-void wifiNoteTriggerPull() {
-  uint32_t now = millis();
-  if ((uint32_t)(now - pullWindow) > WIFI_GESTURE_WINDOW_MS) {
-    pullWindow = now;
-    pullCount = 1;
-  } else {
-    pullCount++;
-  }
-  if (pullCount >= WIFI_GESTURE_PULL_COUNT) {
-    pullCount = 0;
-    if (active) doStop(); else doStart();
-  }
-}
-
 void wifiManagerUpdate() {
-  static uint32_t btnDownMs = 0;
-  static bool     btnLast = HIGH;
-  bool b = digitalRead(PIN_WIFI_BTN);
-  if (btnLast == HIGH && b == LOW) {
-    btnDownMs = millis();
-  } else if (btnLast == LOW && b == HIGH) {
-    uint32_t held = millis() - btnDownMs;
-    if (held > 30 && held < 1500) {
-      if (active) doStop(); else doStart();
-    } else if (held >= 3000) {
-      // long press: kept for future use (e.g., factory reset)
+  // ── Button state machine ──────────────────────────────────────────────────
+  // Hold ≥3s  (release between 3s and 30s) → toggle WiFi. 3 beeps on turn-on.
+  // Hold ≥30s → reset WiFi password to default; continuous tone starts at 3s
+  //             as "hold in progress" feedback.
+  static bool     btnPrev      = HIGH;   // last raw read (active LOW)
+  static uint32_t btnDownMs    = 0;      // millis() when button went LOW
+  static bool     continuousOn = false;  // whether continuous buzzer is playing
+
+  bool btnNow = digitalRead(PIN_WIFI_BTN);
+
+  // Falling edge: button pressed
+  if (btnPrev == HIGH && btnNow == LOW) {
+    btnDownMs    = millis();
+    continuousOn = false;
+  }
+
+  // While held: start continuous buzzer feedback after 3s
+  if (btnNow == LOW && btnDownMs != 0) {
+    uint32_t held = (uint32_t)(millis() - btnDownMs);
+    if (held >= 3000 && !continuousOn) {
+      continuousOn = true;
+      ledcWriteTone(PIN_BUZZER, 2700);
+      ledcWrite(PIN_BUZZER, 128);
     }
   }
-  btnLast = b;
 
+  // Rising edge: button released
+  if (btnPrev == LOW && btnNow == HIGH && btnDownMs != 0) {
+    uint32_t held = (uint32_t)(millis() - btnDownMs);
+    btnDownMs = 0;
+
+    if (continuousOn) {
+      ledcWrite(PIN_BUZZER, 0);
+      continuousOn = false;
+    }
+
+    if (held >= 30000) {
+      storageSetWifiPass(WIFI_PASS_DEFAULT);
+      buzzerPlay(BUZZ_SAVE_OK);
+      if (active) {
+        doStop();
+        doStart();
+      }
+      LOG("WiFi password reset to default\n");
+    } else if (held >= 3000) {
+      if (active) {
+        doStop();
+      } else {
+        doStart();
+        buzzerPlayCount(3);
+      }
+    }
+    // held < 3000: ignore
+  }
+
+  btnPrev = btnNow;
+
+  // ── WiFi services ─────────────────────────────────────────────────────────
   if (active) {
     dns.processNextRequest();
     webServerHandle();

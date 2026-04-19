@@ -53,7 +53,7 @@ enum Language : uint8_t {
 // SLOT CONFIG — persisted to NVS via putBytes/getBytes
 // ============================================================================
 // Bump CONFIG_VERSION when the layout/semantics change; storage will wipe.
-#define SLOT_CONFIG_VERSION 4
+#define SLOT_CONFIG_VERSION 5
 
 struct __attribute__((packed)) SlotConfig {
   uint8_t  version;          // SLOT_CONFIG_VERSION
@@ -80,6 +80,7 @@ struct __attribute__((packed)) SlotConfig {
   uint16_t dl;               // Post-shot Delay — D8PA only (BB exits barrel)
 
   uint16_t rofLimit;         // rounds/sec cap, 0 = unlimited
+  uint16_t semiRofMs;        // ms to ignore trigger after semi shot (0 = disabled)
 
   // Hall thresholds (ADC counts 0..4095)
   uint16_t hallTrigLow;      // trig below this = released
@@ -92,7 +93,7 @@ struct __attribute__((packed)) SlotConfig {
   uint8_t  invertTrig;       // 1 = trigger active-LOW (microswitch default)
   uint8_t  silentMode;       // 1 = skip buzzer confirmations during firing
 
-  uint8_t  _reserved[8];
+  uint8_t  _reserved[6];
 };
 
 static_assert(sizeof(SlotConfig) <= 64, "SlotConfig should fit in one NVS blob comfortably");

@@ -7,6 +7,7 @@ uint32_t lastPollMs = 0;
 uint16_t mvCache    = 0;
 uint8_t  cells      = 0;
 bool     low        = false;
+bool     critical   = false;
 bool     cut        = false;
 
 uint16_t readMvOnce() {
@@ -27,10 +28,11 @@ void detectCells(uint16_t mv) {
 }
 
 void evaluate(uint16_t mv) {
-  if (cells == 0) { low = false; cut = false; return; }
+  if (cells == 0) { low = false; critical = false; cut = false; return; }
   uint16_t perCell = mv / cells;
-  low = perCell <= CELL_WARN_MV;
-  cut = perCell <= CELL_CUT_MV;
+  low      = perCell <= CELL_WARN_MV;       // ≤ 3500 mV/cell
+  critical = perCell <= CELL_CRITICAL_MV;   // ≤ 3200 mV/cell
+  cut      = perCell <= CELL_CUT_MV;        // ≤ 3000 mV/cell
 }
 } // namespace
 
@@ -57,10 +59,11 @@ void batteryUpdate() {
   evaluate(mv);
 }
 
-uint16_t batteryMv()    { return mvCache; }
-uint8_t  batteryCells() { return cells; }
-bool     batteryLow()   { return low; }
-bool     batteryCut()   { return cut; }
+uint16_t batteryMv()       { return mvCache; }
+uint8_t  batteryCells()    { return cells; }
+bool     batteryLow()      { return low; }
+bool     batteryCritical() { return critical; }
+bool     batteryCut()      { return cut; }
 
 void batteryKillLatch() {
   digitalWrite(PIN_LATCH, LOW);

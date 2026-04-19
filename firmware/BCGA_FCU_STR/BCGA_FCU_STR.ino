@@ -15,6 +15,8 @@
 #include "wifi_manager.h"
 #include "web_server.h"
 
+#include <esp_sleep.h>
+
 namespace {
 
 SlotConfig    activeCfg;
@@ -27,6 +29,10 @@ uint32_t  trigDebounceUntilMs = 0;
 
 uint32_t  shotsAtLastPersist = 0;
 uint32_t  lastShotPersistMs  = 0;
+
+// Activity tracking for deep-sleep watchdog and /trigstate endpoint
+uint32_t  lastTriggerActivityMs = 0;
+uint32_t  trigTestEventCount    = 0;   // increments on every logical edge
 
 void applySlot(uint8_t idx) {
   storageLoadSlot(idx, activeCfg);
@@ -61,12 +67,15 @@ void serviceTrigger() {
   if (raw == trigCurrent) return;
 
   trigCurrent = raw;
+  lastTriggerActivityMs = now;
+  trigTestEventCount++;
   FireMode mode = selectorReadMode(activeCfg);
 
-  if (!trigCurrent) {
-    // released — for SAFE in WiFi-gesture path, count pulls
-    if (mode == FIRE_SAFE) wifiNoteTriggerPull();
+  // Semi ROF cap: swallow the press if we're still inside the cooldown.
+  if (trigCurrent && mode == FIRE_SEMI && firingIsSemiBlocked(activeCfg)) {
+    return;
   }
+
   firingOnTriggerEdge(trigCurrent, activeCfg, mode);
 }
 
@@ -91,6 +100,10 @@ void persistShotsIfNeeded() {
 
 }  // namespace
 
+// Exported for web_server.cpp — trigger test endpoint (/trigstate).
+bool     webServerGetTrigPressed() { return trigCurrent; }
+uint32_t webServerGetTrigEvents()  { return trigTestEventCount; }
+
 void setup() {
   Serial.begin(115200);
   delay(50);
@@ -113,10 +126,53 @@ void setup() {
   rs.currentMode = selectorReadMode(activeCfg);
 
   buzzerPlay(BUZZ_BOOT);
+  if (storageWasFirstBoot()) {
+    // First-ever boot (NVS just initialized) — follow BUZZ_BOOT with BUZZ_READY
+    // so the user can recognize a fresh unit from a normal power-up.
+    uint32_t t = millis();
+    while (buzzerBusy() && (uint32_t)(millis() - t) < 800) { buzzerUpdate(); }
+    delay(200);
+    buzzerPlay(BUZZ_READY);
+  }
   shotsAtLastPersist = 0;
   lastShotPersistMs  = millis();
 
   LOG("Active slot: %u (%s)\n", lastSlot, activeCfg.name);
+
+  // ── Boot WiFi gesture: hold trigger for 5s within first 5s ───────────────
+  {
+    const uint32_t BOOT_WINDOW_MS = 5000;
+    const uint32_t BOOT_HOLD_MS   = 5000;
+    uint32_t windowStart = millis();
+    bool triggerHeldAtBoot = false;
+    uint32_t trigHoldStart = 0;
+
+    while ((uint32_t)(millis() - windowStart) < BOOT_WINDOW_MS) {
+      bool trigPressed = (digitalRead(PIN_TRIG) == LOW);
+
+      if (trigPressed && !triggerHeldAtBoot) {
+        triggerHeldAtBoot = true;
+        trigHoldStart = millis();
+      } else if (!trigPressed) {
+        triggerHeldAtBoot = false;
+        trigHoldStart = 0;
+      }
+
+      if (triggerHeldAtBoot &&
+          (uint32_t)(millis() - trigHoldStart) >= BOOT_HOLD_MS) {
+        wifiStart();
+        buzzerPlayCount(3);
+        uint32_t buzzerWait = millis();
+        while (buzzerBusy() && (uint32_t)(millis() - buzzerWait) < 1500) {
+          buzzerUpdate();
+        }
+        break;
+      }
+      buzzerUpdate();
+    }
+  }
+
+  lastTriggerActivityMs = millis();
 
 #ifdef WIFI_AUTOSTART_AT_BOOT
   LOGLN("WIFI_AUTOSTART_AT_BOOT defined -> starting AP now");
@@ -155,4 +211,16 @@ void loop() {
 
   // 7) Persist shot counter occasionally
   persistShotsIfNeeded();
+
+  // 8) Deep-sleep watchdog — go to sleep if trigger has been idle for 60 min.
+  // Waking source: PIN_TRIG LOW. The first trigger pull wakes the MCU
+  // (full reboot); the second actually fires. ESP32-C3 uses the GPIO
+  // deep-sleep wakeup path (ext0/ext1 don't exist on RISC-V parts).
+  if ((uint32_t)(millis() - lastTriggerActivityMs) >= DEEP_SLEEP_TIMEOUT_MS) {
+    if (wifiActive()) wifiStop();
+    buzzerStop();
+    esp_deep_sleep_enable_gpio_wakeup(1ULL << PIN_TRIG, ESP_GPIO_WAKEUP_GPIO_LOW);
+    esp_deep_sleep_start();
+    // Never returns.
+  }
 }

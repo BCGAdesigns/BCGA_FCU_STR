@@ -1,6 +1,7 @@
 // BCGA FCU STR — wifi_manager.cpp
-// Starter has no WiFi button — AP is brought up by the 5-pull trigger gesture
-// (in SAFE) and torn down after WIFI_AUTO_OFF_MS of inactivity.
+// Starter has no WiFi button — AP is brought up only by the boot trigger gesture
+// (hold the trigger for 5s during the first 5s after boot). Torn down after
+// WIFI_AUTO_OFF_MS of inactivity.
 
 #include "wifi_manager.h"
 #include "config.h"
@@ -16,10 +17,6 @@ DNSServer dns;
 bool      active     = false;
 uint32_t  startMs    = 0;
 uint32_t  lastActMs  = 0;
-
-// gesture
-uint8_t   pullCount  = 0;
-uint32_t  pullWindow = 0;
 
 void doStart() {
   if (active) return;
@@ -60,20 +57,6 @@ void wifiStart()         { doStart(); }
 void wifiStop()          { doStop(); }
 bool wifiActive()        { return active; }
 void wifiNoteActivity()  { if (active) lastActMs = millis(); }
-
-void wifiNoteTriggerPull() {
-  uint32_t now = millis();
-  if ((uint32_t)(now - pullWindow) > WIFI_GESTURE_WINDOW_MS) {
-    pullWindow = now;
-    pullCount = 1;
-  } else {
-    pullCount++;
-  }
-  if (pullCount >= WIFI_GESTURE_PULL_COUNT) {
-    pullCount = 0;
-    if (active) doStop(); else doStart();
-  }
-}
 
 void wifiManagerUpdate() {
   if (active) {

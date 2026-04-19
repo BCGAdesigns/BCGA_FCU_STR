@@ -1,6 +1,6 @@
 // BCGA FCU STR — types.h
 // Shared enums and the SlotConfig struct persisted to NVS.
-// Starter (perfboard) variant: S8PA only, no battery, no MOS swap.
+// Starter (perfboard) variant: S8PA + D8PA (no battery, no kill latch).
 
 #pragma once
 
@@ -52,12 +52,13 @@ enum Language : uint8_t {
 // SLOT CONFIG — persisted to NVS via putBytes/getBytes
 // ============================================================================
 // Bump SLOT_CONFIG_VERSION when the layout/semantics change; storage will wipe.
-#define SLOT_CONFIG_VERSION 4
+#define SLOT_CONFIG_VERSION 6
 
 struct __attribute__((packed)) SlotConfig {
   uint8_t  version;          // SLOT_CONFIG_VERSION
   char     name[16];         // UTF-8 short name
 
+  uint8_t  solenoidCount;    // 1 = S8PA (single), 2 = D8PA (dual)
   uint8_t  trigMode;         // SwitchMode
   uint8_t  selMode;          // SwitchMode
   uint8_t  sel3pos;          // 1 = enable 3rd selector position (Hall only)
@@ -69,11 +70,16 @@ struct __attribute__((packed)) SlotConfig {
   uint8_t  selPos3Mode;
 
   // Timing — milliseconds, clamped FIRE_MIN_MS..FIRE_MAX_MS
-  // S8PA cycle: pulse SOL1 (DP) → wait DR → repeat
-  uint16_t dr;               // Inter-shot rest
-  uint16_t dp;               // Shot Poppet — SOL1 pulse
+  // Cycle order:
+  //   D8PA: pulse SOL2 (DN) → wait DR → pulse SOL1 (DP) → wait DL → repeat
+  //   S8PA: pulse SOL1 (DP) → wait DR → repeat (DN and DL unused)
+  uint16_t dn;               // Nozzle Dwell — SOL2 pulse (D8PA only)
+  uint16_t dr;               // D8PA: seal wait between DN and DP. S8PA: inter-shot rest.
+  uint16_t dp;               // Shot Poppet — SOL1 pulse (both modes)
+  uint16_t dl;               // Post-shot Delay — D8PA only (BB exits barrel)
 
   uint16_t rofLimit;         // rounds/sec cap, 0 = unlimited
+  uint16_t semiRofMs;        // ms to ignore trigger after semi shot (0 = disabled)
 
   // Hall thresholds (ADC counts 0..4095)
   uint16_t hallTrigLow;      // trig below this = released
@@ -82,10 +88,11 @@ struct __attribute__((packed)) SlotConfig {
   uint16_t hallSelLow2;      // pos 2 upper bound (only used when sel3pos == 1)
 
   // Flags
+  uint8_t  mosfetSwap;       // 1 = swap PIN_MOS_1 ↔ PIN_MOS_2 logical roles (D8PA wiring fix)
   uint8_t  invertTrig;       // 1 = trigger active-LOW (microswitch default)
   uint8_t  silentMode;       // 1 = skip buzzer confirmations during firing
 
-  uint8_t  _reserved[8];
+  uint8_t  _reserved[3];
 };
 
 static_assert(sizeof(SlotConfig) <= 64, "SlotConfig should fit in one NVS blob comfortably");

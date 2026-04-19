@@ -26,6 +26,9 @@ void firingUpdate(const SlotConfig& cfg, FireMode mode);
 bool firingActive();
 void firingForceStop();         // emergency stop (e.g. battery cut)
 uint32_t firingShotCount();     // total shots since boot
+// Returns true while the semi-ROF cap is still blocking a new trigger press.
+// cfg.semiRofMs = 0 disables the cap (always returns false).
+bool firingIsSemiBlocked(const SlotConfig& cfg);
 
 // Logical pin helpers (respect mosfetSwap).
 inline uint8_t pinPoppet(const SlotConfig& cfg) {

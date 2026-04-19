@@ -9,7 +9,8 @@ Preferences prefs;
 const char* NS = "bcgafcu";
 // Bump when defaults or schema change. Mismatch on boot → wipe namespace and
 // reinit, so users get the new defaults without manual factory-reset.
-const uint8_t STORAGE_INIT_VERSION = 4;
+const uint8_t STORAGE_INIT_VERSION = 5;
+bool firstBootFlag = false;
 }
 
 static void buildKey(char* out, const char* prefix, uint8_t idx) {
@@ -20,6 +21,7 @@ void storageBegin() {
   prefs.begin(NS, false);
   uint8_t initVer = prefs.getUChar("init", 0);
   if (initVer != STORAGE_INIT_VERSION) {
+    firstBootFlag = true;
     prefs.clear();
     for (uint8_t i = 0; i < SLOT_COUNT; i++) {
       SlotConfig c;
@@ -33,6 +35,8 @@ void storageBegin() {
     prefs.putUChar("init", STORAGE_INIT_VERSION);
   }
 }
+
+bool storageWasFirstBoot() { return firstBootFlag; }
 
 void storageDefaultSlot(uint8_t idx, SlotConfig& out) {
   memset(&out, 0, sizeof(out));
@@ -50,6 +54,7 @@ void storageDefaultSlot(uint8_t idx, SlotConfig& out) {
   out.dp            = DEFAULT_DP_MS;
   out.dl            = DEFAULT_DL_MS;
   out.rofLimit      = DEFAULT_ROF_LIMIT;
+  out.semiRofMs     = DEFAULT_SEMI_ROF_MS;   // 0 = disabled
   out.hallTrigLow   = 1500;
   out.hallTrigHigh  = 2500;
   out.hallSelLow1   = 1365;                // ~1/3 for 3-pos default; midpoint when 2-pos

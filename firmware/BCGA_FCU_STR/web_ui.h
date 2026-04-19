@@ -1,18 +1,18 @@
 // BCGA FCU STR — web_ui.h
 // Single-page dashboard served on GET /. Stored in PROGMEM as raw string.
-// Starter (perfboard) variant: S8PA only. No battery chip, no MOS swap, no SOL 2.
+// Starter (perfboard) variant: S8PA + D8PA. No battery chip, no WiFi button.
 //
 // Section order:
-//   - Header: gear logo, name, BR/EN
+//   - Header: gear logo, name, S8PA/D8PA tag, BR/EN
 //   - Slot picker: 3 buttons at the top
-//   - 1) Slot (name)
-//   - 2) Timings (DP/DR em ms) + ROF teórico
+//   - 1) Tipo de disparo (S8PA/D8PA) — help texts: Jack/Backdraft vs F2/Pulsar
+//   - 2) Timings (DN/DR/DP/DL em ms; DN+DL somem em S8PA) + ROF teórico
 //   - 3) Seletor (Pos1/Pos2; toggle 3-pos auto-ativa Hall e revela Pos3)
-//   - 4) Entrada (Sw/Hall do gatilho, inverter gatilho, silent)
+//   - 4) Entrada (Sw/Hall do gatilho, inverter gatilho, swap MOS, silent)
 //   - 5) Sensibilidade (só Hall trigger): captura de ponto único
 //   - 6) Calibração do gatilho (só Hall trigger): ruído + solto/pressionado
 //   - 7) Calibração do seletor (só Hall sel): ruído + 3 posições
-//   - 8) Diagnóstico (buzzer + Test MOS)
+//   - 8) Diagnóstico (buzzer + Test MOS — 2s, respeita mosfetSwap)
 //   - 9) WiFi (trocar senha)
 
 #pragma once
@@ -26,7 +26,7 @@ const char WEB_UI_HTML[] PROGMEM = R"HTML(<!doctype html>
 <meta name="viewport" content="width=device-width,initial-scale=1,viewport-fit=cover" />
 <title>BCGA FCU</title>
 <style>
-:root{--bg:#0b0f1a;--panel:#161b22;--panel2:#1c2230;--text:#e6edf3;--mute:#8b95a5;--accent:#00bcd4;--accent2:#089aaa;--ok:#10b981;--warn:#f59e0b;--err:#ef4444;--line:#243044}
+:root{--bg:#0b0f1a;--panel:#161b22;--panel2:#1c2230;--text:#e6edf3;--mute:#8b95a5;--accent:#8aab47;--accent2:#6e8e35;--ok:#10b981;--warn:#f59e0b;--err:#ef4444;--line:#243044}
 *{box-sizing:border-box}
 html,body{margin:0;padding:0;background:var(--bg);color:var(--text);font:14px/1.4 -apple-system,Segoe UI,Roboto,Helvetica,Arial,sans-serif}
 header{position:sticky;top:0;background:linear-gradient(180deg,#0b0f1a 70%,rgba(11,15,26,.85));padding:10px 14px;border-bottom:1px solid var(--line);z-index:5;display:flex;align-items:center;gap:10px;flex-wrap:wrap}
@@ -41,16 +41,16 @@ header .brand .sub{font-size:11px;color:var(--mute)}
 main{padding:14px;max-width:760px;margin:0 auto;padding-bottom:100px}
 .slotPick{display:flex;gap:8px;justify-content:center;margin:0 0 12px}
 .slot-btn{flex:0 0 auto;width:60px;height:48px;border-radius:10px;border:1px solid var(--line);background:var(--panel);color:var(--mute);font-weight:700;font-size:16px;cursor:pointer;font:inherit}
-.slot-btn.on{background:var(--accent);color:#001318;border-color:var(--accent);box-shadow:0 0 0 2px rgba(0,188,212,.25)}
+.slot-btn.on{background:var(--accent);color:#111c02;border-color:var(--accent);box-shadow:0 0 0 2px rgba(138,171,71,.25)}
 section{background:var(--panel);border:1px solid var(--line);border-radius:12px;padding:12px 14px 10px;margin-bottom:12px}
 section h2{margin:0 0 10px;font-size:13px;text-transform:uppercase;letter-spacing:1px;color:var(--accent);display:flex;align-items:center;gap:10px}
-section h2 .num{display:inline-flex;align-items:center;justify-content:center;width:22px;height:22px;border-radius:50%;background:var(--accent);color:#001318;font-weight:800;font-size:12px}
+section h2 .num{display:inline-flex;align-items:center;justify-content:center;width:22px;height:22px;border-radius:50%;background:var(--accent);color:#111c02;font-weight:800;font-size:12px}
 .row{display:flex;align-items:center;gap:10px;margin:8px 0;flex-wrap:wrap}
 .row label{flex:1;min-width:120px;color:var(--mute);display:flex;align-items:center;gap:6px}
 .row .ctrl{flex:2;min-width:160px;display:flex;align-items:center;gap:8px}
 input[type=text],input[type=number],input[type=password],select{background:var(--panel2);color:var(--text);border:1px solid var(--line);border-radius:6px;padding:8px 10px;font:inherit;width:100%}
 input[type=range]{width:100%;accent-color:var(--accent)}
-.btn{background:var(--accent);color:#001318;border:none;padding:10px 14px;border-radius:8px;font-weight:600;cursor:pointer;font:inherit}
+.btn{background:var(--accent);color:#111c02;border:none;padding:10px 14px;border-radius:8px;font-weight:600;cursor:pointer;font:inherit}
 .btn:hover{background:var(--accent2)}
 .btn.ghost{background:transparent;color:var(--accent);border:1px solid var(--accent)}
 .btn.danger{background:var(--err);color:#fff}
@@ -64,6 +64,10 @@ input[type=range]{width:100%;accent-color:var(--accent)}
 .toast.err{background:var(--err);color:#fff}
 .muted{color:var(--mute);font-size:12px}
 .divider{height:1px;background:var(--line);margin:10px 0}
+.radio-row{display:flex;gap:10px;flex-wrap:wrap}
+.radio-card{flex:1 1 140px;background:var(--panel2);border:1px solid var(--line);border-radius:10px;padding:10px;cursor:pointer;text-align:center;font-weight:600}
+.radio-card.on{border-color:var(--accent);color:var(--accent);box-shadow:0 0 0 1px var(--accent) inset}
+.radio-card .small{display:block;font-size:11px;color:var(--mute);margin-top:4px;font-weight:400}
 .hide{display:none!important}
 .rofTheoBox{display:flex;align-items:center;justify-content:space-between;padding:8px 10px;border:1px dashed var(--line);border-radius:8px;background:var(--panel2);margin:6px 0 0}
 .rofTheoBox .v{font-weight:700;color:var(--accent);font-variant-numeric:tabular-nums}
@@ -81,18 +85,21 @@ footer a{color:var(--accent);text-decoration:none}
 .dot{width:8px;height:8px;border-radius:50%;background:var(--line)}
 .dot.on{background:var(--accent)}
 .toggle{display:flex;align-items:center;gap:8px}
+.trigDot{display:inline-block;width:14px;height:14px;border-radius:50%;background:var(--line);border:1px solid var(--mute);transition:background .08s}
+.trigDot.on{background:var(--accent);border-color:var(--accent);box-shadow:0 0 6px var(--accent)}
+body.variant-str header{border-bottom-color:var(--accent)}
 </style>
 </head>
-<body>
+<body class="variant-str">
 
 <header>
   <div class="brand">
     <svg width="32" height="32" viewBox="0 0 64 64" aria-hidden="true">
-      <path fill="#fff" fill-rule="evenodd" d="M28 2 L36 2 L37 9 L43 11 L48 6 L54 12 L49 17 L51 23 L58 24 L58 32 L51 33 L49 39 L54 44 L48 50 L43 45 L37 47 L36 54 L28 54 L27 47 L21 45 L16 50 L10 44 L15 39 L13 33 L6 32 L6 24 L13 23 L15 17 L10 12 L16 6 L21 11 L27 9 Z M32 18 a10 10 0 1 0 0.01 0 Z"/>
+      <path fill="#8aab47" fill-rule="evenodd" d="M28 2 L36 2 L37 9 L43 11 L48 6 L54 12 L49 17 L51 23 L58 24 L58 32 L51 33 L49 39 L54 44 L48 50 L43 45 L37 47 L36 54 L28 54 L27 47 L21 45 L16 50 L10 44 L15 39 L13 33 L6 32 L6 24 L13 23 L15 17 L10 12 L16 6 L21 11 L27 9 Z M32 18 a10 10 0 1 0 0.01 0 Z"/>
     </svg>
     <div class="txt">
       <div class="name" id="hdrName">BCGA FCU</div>
-      <div class="sub" id="hdrSub">FCU Starter • S8PA</div>
+      <div class="sub" id="hdrSub">— • —</div>
     </div>
   </div>
   <div class="lang">
@@ -106,26 +113,42 @@ footer a{color:var(--accent);text-decoration:none}
   <div class="slotPick" id="slotPick"></div>
 
   <section>
-    <h2><span class="num">1</span><span data-i="slotSec">Slot</span></h2>
+    <h2><span class="num">1</span><span data-i="solSec">Tipo de disparo</span></h2>
     <div class="row">
       <label data-i="slotName">Nome do slot</label>
       <div class="ctrl"><input type="text" id="slotName" maxlength="15" /></div>
+    </div>
+    <div class="radio-row">
+      <div class="radio-card" id="solS"><div>S8PA</div><span class="small" data-i="solS">1 solenoide (Jack, Backdraft)</span></div>
+      <div class="radio-card" id="solD"><div>D8PA</div><span class="small" data-i="solD">2 solenoides (F2, Pulsar)</span></div>
     </div>
   </section>
 
   <section>
     <h2><span class="num">2</span><span data-i="timSec">Timings (ms)</span></h2>
-    <div class="row" id="rowDp">
-      <label>DP <button class="help" data-h="dp" type="button">?</button></label>
-      <div class="ctrl"><div class="pair" style="width:100%"><input type="range" id="dpR" min="2" max="80" /><input type="number" id="dpN" min="2" max="80" /></div></div>
+    <div class="row" id="rowDn">
+      <label>DN <button class="help" data-h="dn" type="button">?</button></label>
+      <div class="ctrl"><div class="pair" style="width:100%"><input type="range" id="dnR" min="2" max="80" /><input type="number" id="dnN" min="2" max="80" /></div></div>
     </div>
     <div class="row" id="rowDr">
       <label>DR <button class="help" data-h="dr" type="button">?</button></label>
       <div class="ctrl"><div class="pair" style="width:100%"><input type="range" id="drR" min="2" max="80" /><input type="number" id="drN" min="2" max="80" /></div></div>
     </div>
+    <div class="row" id="rowDp">
+      <label>DP <button class="help" data-h="dp" type="button">?</button></label>
+      <div class="ctrl"><div class="pair" style="width:100%"><input type="range" id="dpR" min="2" max="80" /><input type="number" id="dpN" min="2" max="80" /></div></div>
+    </div>
+    <div class="row" id="rowDl">
+      <label>DL <button class="help" data-h="dl" type="button">?</button></label>
+      <div class="ctrl"><div class="pair" style="width:100%"><input type="range" id="dlR" min="2" max="80" /><input type="number" id="dlN" min="2" max="80" /></div></div>
+    </div>
     <div class="row">
       <label data-i="rofLbl">ROF máx (rps) <button class="help" data-h="rof" type="button">?</button></label>
       <div class="ctrl"><input type="number" id="rofN" min="0" max="50" /></div>
+    </div>
+    <div class="row">
+      <label data-i="semiRof">Semi Max ROF (ms) <button class="help" data-h="semiRof" type="button">?</button></label>
+      <div class="ctrl"><input type="number" id="semiRofN" min="0" max="500" /></div>
     </div>
     <div class="rofTheoBox">
       <span data-i="rofTheoLbl">ROF teórico <button class="help" data-h="rofTheo" type="button">?</button></span>
@@ -148,6 +171,7 @@ footer a{color:var(--accent);text-decoration:none}
     <h2><span class="num">4</span><span data-i="inSec">Entrada</span></h2>
     <div class="row"><label data-i="trigIn">Gatilho <button class="help" data-h="trigMode" type="button">?</button></label><div class="ctrl"><select id="trigMode"><option value="0" data-i="sw">Microswitch</option><option value="1" data-i="hl">Hall (analog)</option></select></div></div>
     <div class="row"><label data-i="invTrig">Inverter gatilho</label><div class="ctrl"><label class="toggle"><input type="checkbox" id="invertTrig" /></label></div></div>
+    <div class="row" id="rowMosSwap"><label data-i="mosSwap">Trocar MOS 1 ↔ 2 <button class="help" data-h="mosSwap" type="button">?</button></label><div class="ctrl"><label class="toggle"><input type="checkbox" id="mosfetSwap" /> <span data-i="mosSwapH">corrigir fiação trocada</span></label></div></div>
     <div class="row"><label data-i="silent">Modo silencioso <button class="help" data-h="silent" type="button">?</button></label><div class="ctrl"><label class="toggle"><input type="checkbox" id="silent" /> <span data-i="silentH">não tocar buzzer no uso</span></label></div></div>
   </section>
 
@@ -214,6 +238,15 @@ footer a{color:var(--accent);text-decoration:none}
       <label data-i="mosTest">Teste MOSFET (2s) <button class="help" data-h="mosTest" type="button">?</button></label>
       <div class="ctrl">
         <button class="btn danger sm" id="mos1Btn" type="button">SOL 1 (Poppet)</button>
+        <button class="btn danger sm" id="mos2Btn" type="button">SOL 2 (Nozzle)</button>
+      </div>
+    </div>
+    <div class="row">
+      <label data-i="trigTest">Teste gatilho <button class="help" data-h="trigTest" type="button">?</button></label>
+      <div class="ctrl">
+        <button class="btn ghost sm" id="trigTestBtn" type="button" data-i="trigTestStart">Iniciar</button>
+        <span class="trigDot" id="trigTestDot"></span>
+        <span class="muted" id="trigTestMsg" data-i="trigTestIdle">—</span>
       </div>
     </div>
   </section>
@@ -262,12 +295,14 @@ footer a{color:var(--accent);text-decoration:none}
 "use strict";
 const I = {
   br:{
-    slotSec:"Slot",slotName:"Nome do slot",
-    timSec:"Timings (ms)",rofLbl:"ROF máx (rps)",rofTheoLbl:"ROF teórico",
+    slotName:"Nome do slot",
+    solSec:"Tipo de disparo",solS:"1 solenoide (Jack, Backdraft)",solD:"2 solenoides (F2, Pulsar)",
+    timSec:"Timings (ms)",rofLbl:"ROF máx (rps)",rofTheoLbl:"ROF teórico",semiRof:"Semi Max ROF (ms)",
     selSec:"Seletor",pos1:"Posição 1",pos2:"Posição 2",pos3:"Posição 3",
     sel3:"Seletor de 3 posições",sel3H:"habilitar Pos 3 (ativa Hall)",
     inSec:"Entrada",trigIn:"Gatilho",sw:"Microswitch",hl:"Hall (analog)",
     invTrig:"Inverter gatilho",
+    mosSwap:"Trocar MOS 1 ↔ 2",mosSwapH:"corrigir fiação trocada",
     silent:"Modo silencioso",silentH:"não tocar buzzer no uso",
     sensSec:"Sensibilidade do gatilho",sensHelp:"Puxe o gatilho até onde quer que dispare e clique em Salvar.",
     curPoint:"Ponto atual",savePoint:"Salvar ponto",liveAdc:"Leitura ADC",
@@ -275,6 +310,7 @@ const I = {
     calSelSec:"Calibração do seletor",calSelHelp:"Comece pelo ruído (faz 1 disparo de teste). Não toque no seletor.",
     calNoise:"Ruído",calTrig:"Gatilho",calSel:"Seletor (3 pos)",calBtn:"Calibrar",
     diagSec:"Diagnóstico",buzz:"Buzzer",bzMode:"Trocar modo",bzSave:"Salvar OK",bzWifi:"WiFi ON",bzTest:"Teste",play:"Tocar",mosTest:"Teste MOSFET (2s)",
+    trigTest:"Teste gatilho",trigTestStart:"Iniciar",trigTestStop:"Parar",trigTestIdle:"—",trigTestDone:"teste concluído",
     wifiSec:"WiFi",newPwd:"Nova senha",changePwd:"Trocar senha",
     reload:"Recarregar",save:"Salvar slot",resetSlot:"Resetar slot",cancel:"Cancelar",capture:"Capturar",saveCal:"Salvar",
     fSafe:"SAFE",fSemi:"SEMI",fFull:"FULL",fB2:"Burst 2",fB3:"Burst 3",fB4:"Burst 4",
@@ -290,29 +326,36 @@ const I = {
     calStepSel:"Mova o seletor para a posição",
     calRangeErr:"Curso insuficiente — repita.",
     help:{
-      dr:"Descanso (ms) entre tiros após o pulso DP. Aumente para reduzir cadência ou dar tempo ao circuito pneumático. Padrão 20 ms.",
-      dp:"Tempo (ms) que o solenoide (poppet) fica aberto — quanto maior, mais ar passa pelo cano. Aumente para canos longos ou BBs pesadas. Padrão 25 ms.",
+      dn:"Tempo (ms) que a SOL 2 (nozzle) fica acionada — recua o nozzle para alimentar a BB. Aumente se a arma estiver falhando alimentação. Padrão 18 ms.",
+      dr:"Em D8PA: espera entre DN e DP, dá tempo da mola empurrar o bico e vedar o bucking. Em S8PA: descanso entre tiros. Padrão 26 ms (D8PA) / 20 ms (S8PA).",
+      dp:"Tempo (ms) que a SOL 1 (poppet) fica aberta — quanto maior, mais ar passa pelo cano. Aumente para canos longos ou BBs pesadas. Padrão 25 ms.",
+      dl:"Delay (ms) após o disparo, aguardando a BB sair do cano antes do próximo tiro. Só D8PA. Padrão 10 ms.",
       rof:"Limite de cadência em tiros por segundo (rps). 0 = sem limite (cadência só pelos timings).",
-      rofTheo:"Cadência teórica em rps calculada a partir dos timings: 1000 ÷ (DP + DR).",
+      semiRof:"Tempo mínimo (ms) entre tiros em SEMI. Impede auto-disparo acidental com gatilhos rápidos. 0 = desativado.",
+      rofTheo:"Cadência teórica em rps calculada a partir dos timings: 1000 ÷ (soma dos delays).",
       pos:"Modo de fogo quando o seletor está nesta posição.",
       sel3:"Habilita uma terceira posição do seletor. Requer sensor Hall (a opção de 3 stops digital não existe). Ao ligar, o seletor passa automaticamente para Hall.",
       trigMode:"Tipo do sensor do gatilho: microswitch digital ou Hall analógico.",
+      mosSwap:"Se você soldou nozzle e poppet nos pinos trocados, marque para corrigir via software (D8PA).",
       silent:"Não toca confirmação do buzzer durante o uso normal.",
       sens:"Puxe o gatilho até o ponto onde quer disparar e clique Salvar — o ADC vira o ponto de disparo.",
       noise:"Faz 1 disparo completo medindo o ruído elétrico no Hall. Use ANTES de calibrar gatilho para definir a margem da deadband.",
       cal:"Captura os valores ADC do gatilho/seletor solto e pressionado.",
       mosTest:"Pulsa o MOSFET por 2 segundos. Use só para conferir a fiação — sem gas/munição.",
+      trigTest:"Acende o indicador enquanto você puxa o gatilho. Não dispara solenoide. Auto-encerra após 15s sem atividade.",
       buzz:"Toca um padrão de aviso. Útil para testar o buzzer.",
       pwd:"Senha do AP WiFi. Mínimo 8 caracteres."
     }
   },
   en:{
-    slotSec:"Slot",slotName:"Slot name",
-    timSec:"Timings (ms)",rofLbl:"ROF cap (rps)",rofTheoLbl:"Theoretical ROF",
+    slotName:"Slot name",
+    solSec:"Firing type",solS:"1 solenoid (Jack, Backdraft)",solD:"2 solenoids (F2, Pulsar)",
+    timSec:"Timings (ms)",rofLbl:"ROF cap (rps)",rofTheoLbl:"Theoretical ROF",semiRof:"Semi Max ROF (ms)",
     selSec:"Selector",pos1:"Position 1",pos2:"Position 2",pos3:"Position 3",
     sel3:"3-position selector",sel3H:"enable Pos 3 (auto-Hall)",
     inSec:"Input",trigIn:"Trigger",sw:"Microswitch",hl:"Hall (analog)",
     invTrig:"Invert trigger",
+    mosSwap:"Swap MOS 1 ↔ 2",mosSwapH:"fix swapped wiring",
     silent:"Silent mode",silentH:"skip buzzer while in use",
     sensSec:"Trigger sensitivity",sensHelp:"Pull trigger to the desired fire point and click Save.",
     curPoint:"Current point",savePoint:"Save point",liveAdc:"ADC reading",
@@ -320,6 +363,7 @@ const I = {
     calSelSec:"Selector calibration",calSelHelp:"Start with noise (fires 1 test cycle). Don't touch the selector.",
     calNoise:"Noise",calTrig:"Trigger",calSel:"Selector (3 pos)",calBtn:"Calibrate",
     diagSec:"Diagnostics",buzz:"Buzzer",bzMode:"Mode change",bzSave:"Save OK",bzWifi:"WiFi ON",bzTest:"Test",play:"Play",mosTest:"MOSFET test (2s)",
+    trigTest:"Trigger test",trigTestStart:"Start",trigTestStop:"Stop",trigTestIdle:"—",trigTestDone:"test ended",
     wifiSec:"WiFi",newPwd:"New password",changePwd:"Change password",
     reload:"Reload",save:"Save slot",resetSlot:"Reset slot",cancel:"Cancel",capture:"Capture",saveCal:"Save",
     fSafe:"SAFE",fSemi:"SEMI",fFull:"FULL",fB2:"Burst 2",fB3:"Burst 3",fB4:"Burst 4",
@@ -335,18 +379,23 @@ const I = {
     calStepSel:"Move selector to position",
     calRangeErr:"Travel too short — retry.",
     help:{
-      dr:"Inter-shot rest (ms) after the DP pulse. Increase to lower cadence or give the pneumatics time to settle. Default 20 ms.",
-      dp:"Time (ms) the solenoid (poppet) stays open — longer = more air through the barrel. Increase for long barrels or heavy BBs. Default 25 ms.",
+      dn:"Time (ms) SOL 2 (nozzle) is energized — pulls back the nozzle to feed a BB. Increase if feeding fails. Default 18 ms.",
+      dr:"In D8PA: wait between DN and DP for the spring to seal the bucking. In S8PA: inter-shot rest. Default 26 ms (D8PA) / 20 ms (S8PA).",
+      dp:"Time (ms) SOL 1 (poppet) stays open — longer = more air through the barrel. Increase for long barrels or heavy BBs. Default 25 ms.",
+      dl:"Delay (ms) after the shot, waiting for the BB to exit the barrel before the next shot. D8PA only. Default 10 ms.",
       rof:"Rate cap in rounds per second (rps). 0 = unlimited (cadence ruled by timings only).",
-      rofTheo:"Theoretical cadence in rps from timings: 1000 ÷ (DP + DR).",
+      semiRof:"Minimum time (ms) between SEMI shots. Blocks accidental double-taps from fast triggers. 0 = disabled.",
+      rofTheo:"Theoretical cadence in rps from timings: 1000 ÷ (sum of delays).",
       pos:"Fire mode when the selector is in this position.",
       sel3:"Enables a third selector position. Requires Hall sensor (no 3-stop digital). Toggling on auto-switches the selector input to Hall.",
       trigMode:"Trigger sensor type: digital microswitch or analog Hall.",
+      mosSwap:"If you soldered nozzle/poppet to the wrong pins, check this to fix in software (D8PA).",
       silent:"Skips buzzer confirmations during normal use.",
       sens:"Pull trigger to the point where you want it to fire and click Save — that ADC becomes the fire point.",
       noise:"Fires 1 full cycle while sampling the Hall ADC. Run BEFORE calibrating the trigger to set the deadband margin.",
       cal:"Captures ADC values for released/pressed trigger or each selector position.",
       mosTest:"Pulses the MOSFET for 2 seconds. Use only to check wiring — no gas/ammo.",
+      trigTest:"Lights the indicator while you pull the trigger. Does not fire any solenoid. Auto-stops after 15s idle.",
       buzz:"Plays a warning pattern. Useful to test the buzzer.",
       pwd:"WiFi AP password. Minimum 8 characters."
     }
@@ -440,8 +489,9 @@ function updateHeader(){
   if (!cur.meta) return;
   const variant = cur.meta.variant || "Starter";
   const ssid = cur.meta.ssid || "BCGA_FCU_STR";
+  const sol = (cur.slot && cur.slot.solenoids===1) ? "S8PA" : "D8PA";
   $("hdrName").textContent = ssid.replace(/_/g," ");
-  $("hdrSub").textContent = "FCU "+variant+" • S8PA";
+  $("hdrSub").textContent = "FCU "+variant+" • "+sol;
   $("ftVer").textContent = "v"+(cur.meta.fw||"");
   $("ftVar").textContent = variant;
 }
@@ -449,10 +499,25 @@ function updateHeader(){
 function recalcRofTheo(){
   if (!cur.slot) { $("rofTheoVal").textContent = "— rps"; return; }
   const pair = (k)=> Math.max(2, Math.min(80, parseInt($(k+"N").value||"0",10)));
-  const sum = pair("dp") + pair("dr");
+  const isS = cur.slot.solenoids === 1;
+  const sum = isS ? (pair("dp") + pair("dr"))
+                  : (pair("dn") + pair("dr") + pair("dp") + pair("dl"));
   if (!sum) { $("rofTheoVal").textContent = "— rps"; return; }
   const rps = 1000 / sum;
   $("rofTheoVal").textContent = rps.toFixed(1) + " rps";
+}
+
+function refreshSolenoidUI(){
+  if (!cur.slot) return;
+  const isS = cur.slot.solenoids===1;
+  $("solS").classList.toggle("on", isS);
+  $("solD").classList.toggle("on", !isS);
+  show($("rowDn"), !isS);
+  show($("rowDl"), !isS);
+  show($("mos2Btn"), !isS);
+  show($("rowMosSwap"), !isS);
+  recalcRofTheo();
+  updateHeader();
 }
 
 function refreshSelectorUI(){
@@ -488,15 +553,16 @@ function applySlotToUi(s){
   $("selPos3").value = s.selPos3;
   $("trigMode").value  = s.trigMode;
   $("sel3pos").checked = !!s.sel3pos;
+  $("mosfetSwap").checked = !!s.mosfetSwap;
   $("invertTrig").checked = !!s.invertTrig;
   $("silent").checked     = !!s.silent;
-  for (const k of ["dr","dp"]){
+  for (const k of ["dn","dr","dp","dl"]){
     $(k+"R").value = s[k]; $(k+"N").value = s[k];
   }
   $("rofN").value = s.rof;
-  recalcRofTheo();
+  $("semiRofN").value = s.semiRofMs || 0;
+  refreshSolenoidUI();
   refreshSelectorUI();
-  updateHeader();
 }
 
 async function loadMeta(){
@@ -519,18 +585,21 @@ function readSlotFromUi(){
   const pair = (k)=> Math.max(2, Math.min(80, parseInt($(k+"N").value||"0",10)));
   return {
     name: $("slotName").value || ("Slot "+(cur.i+1)),
+    solenoids: $("solD").classList.contains("on") ? 2 : 1,
     trigMode: parseInt($("trigMode").value,10),
     selMode:  cur.slot.selMode,
     sel3pos:  $("sel3pos").checked,
     selPos1:  parseInt($("selPos1").value,10),
     selPos2:  parseInt($("selPos2").value,10),
     selPos3:  parseInt($("selPos3").value,10),
-    dr: pair("dr"), dp: pair("dp"),
+    dn: pair("dn"), dr: pair("dr"), dp: pair("dp"), dl: pair("dl"),
     rof:   Math.max(0, Math.min(50, parseInt($("rofN").value||"0",10))),
+    semiRofMs: Math.max(0, Math.min(500, parseInt($("semiRofN").value||"0",10))),
     hallTrigLow:  cur.slot.hallTrigLow,
     hallTrigHigh: cur.slot.hallTrigHigh,
     hallSelLow1:  cur.slot.hallSelLow1,
     hallSelLow2:  cur.slot.hallSelLow2,
+    mosfetSwap: $("mosfetSwap").checked,
     invertTrig: $("invertTrig").checked,
     silent:     $("silent").checked,
     makeActive: true
@@ -771,12 +840,47 @@ function calNext(){
   if (calMode === "sel")  return calNextSel();
 }
 
+// ===== Trigger test poll =====
+let trigTestT = null;
+let trigTestLastEvt = 0;
+let trigTestLastActivity = 0;
+function trigTestStop(){
+  if (trigTestT){ clearInterval(trigTestT); trigTestT = null; }
+  $("trigTestBtn").textContent = I[lang].trigTestStart;
+  $("trigTestDot").classList.remove("on");
+  $("trigTestMsg").textContent = I[lang].trigTestDone;
+}
+function trigTestStart(){
+  if (trigTestT) return;
+  trigTestLastEvt = 0;
+  trigTestLastActivity = Date.now();
+  $("trigTestBtn").textContent = I[lang].trigTestStop;
+  $("trigTestMsg").textContent = "…";
+  trigTestT = setInterval(async ()=>{
+    try {
+      const r = await jget("/trigstate");
+      if (!r.ok) return;
+      $("trigTestDot").classList.toggle("on", !!r.pressed);
+      if (r.events !== trigTestLastEvt){
+        trigTestLastEvt = r.events;
+        trigTestLastActivity = Date.now();
+      }
+      if (Date.now() - trigTestLastActivity > 15000){
+        trigTestStop();
+      }
+    } catch(e){}
+  }, 150);
+}
+
 // ===== wire-up =====
 window.addEventListener("DOMContentLoaded", async ()=>{
-  ["dr","dp"].forEach(bindPair);
+  ["dn","dr","dp","dl"].forEach(bindPair);
 
   $("langBR").addEventListener("click", ()=>{ lang="br"; jpost("/setlang",{lang:"br"}); applyLang(); refreshSelectorUI(); });
   $("langEN").addEventListener("click", ()=>{ lang="en"; jpost("/setlang",{lang:"en"}); applyLang(); refreshSelectorUI(); });
+
+  $("solS").addEventListener("click", ()=>{ if(!cur.slot) return; cur.slot.solenoids=1; refreshSolenoidUI(); });
+  $("solD").addEventListener("click", ()=>{ if(!cur.slot) return; cur.slot.solenoids=2; refreshSolenoidUI(); });
 
   $("trigMode").addEventListener("change", e=>{ if(!cur.slot) return; cur.slot.trigMode = parseInt(e.target.value,10); refreshCalUI(); });
   $("sel3pos").addEventListener("change", e=>{
@@ -798,6 +902,13 @@ window.addEventListener("DOMContentLoaded", async ()=>{
   $("mos1Btn").addEventListener("click", async ()=>{
     const r = await jpost("/test", {mos:1});
     toast(r.ok ? I[lang].mosOk : (I[lang].mosFail+": "+(r.error||"")), !r.ok);
+  });
+  $("mos2Btn").addEventListener("click", async ()=>{
+    const r = await jpost("/test", {mos:2});
+    toast(r.ok ? I[lang].mosOk : (I[lang].mosFail+": "+(r.error||"")), !r.ok);
+  });
+  $("trigTestBtn").addEventListener("click", ()=>{
+    if (trigTestT) trigTestStop(); else trigTestStart();
   });
 
   $("setPwdBtn").addEventListener("click", async ()=>{

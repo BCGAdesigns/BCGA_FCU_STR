@@ -6,6 +6,7 @@
 #include "types.h"
 
 void          storageBegin();
+bool          storageWasFirstBoot();    // true only on the boot that initialized NVS
 
 bool          storageLoadSlot(uint8_t idx, SlotConfig& out);
 bool          storageSaveSlot(uint8_t idx, const SlotConfig& cfg);

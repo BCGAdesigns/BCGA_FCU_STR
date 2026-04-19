@@ -12,6 +12,7 @@ void     batteryBegin();
 void     batteryUpdate();
 uint16_t batteryMv();        // 0 if unknown
 uint8_t  batteryCells();     // 2 or 3 (0 if unknown)
-bool     batteryLow();
-bool     batteryCut();
+bool     batteryLow();       // ≤ CELL_WARN_MV/cell
+bool     batteryCritical();  // ≤ CELL_CRITICAL_MV/cell (middle tier)
+bool     batteryCut();       // ≤ CELL_CUT_MV/cell
 void     batteryKillLatch(); // force latch off (Pro only)

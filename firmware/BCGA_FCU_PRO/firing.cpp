@@ -24,6 +24,9 @@ uint16_t   shotsRemaining = 0;
 uint32_t   minIntervalUs  = 0;
 uint32_t   lastShotEndUs  = 0;
 uint32_t   shotsTotal     = 0;
+// Tracks the cycle end of the most recent SEMI shot for semiRofMs blocking.
+uint32_t   lastSemiShotEndMs = 0;
+bool       lastCycleWasSemi  = false;
 
 // MOSFET test scheduler (web diagnostic) — non-blocking, active-HIGH only.
 uint8_t    mosTestPin       = 0;
@@ -84,12 +87,19 @@ void firingOnTriggerEdge(bool pressed, const SlotConfig& cfg, FireMode mode) {
   if (mode == FIRE_SAFE) { cycleArmed = false; shotsRemaining = 0; return; }
   if (pressed) {
     cycleArmed = true;
+    lastCycleWasSemi = (mode == FIRE_SEMI);
     if (mode == FIRE_SEMI)        shotsRemaining = 1;
     else if (mode == FIRE_FULL)   shotsRemaining = 0xFFFF;
     else if (isBurstMode(mode))   shotsRemaining = burstCountOf(mode);
   } else {
     if (mode == FIRE_FULL) shotsRemaining = 0;
   }
+}
+
+bool firingIsSemiBlocked(const SlotConfig& cfg) {
+  if (cfg.semiRofMs == 0) return false;
+  if (lastSemiShotEndMs == 0) return false;
+  return (uint32_t)(millis() - lastSemiShotEndMs) < cfg.semiRofMs;
 }
 
 void firingUpdate(const SlotConfig& cfg, FireMode mode) {
@@ -138,7 +148,10 @@ void firingUpdate(const SlotConfig& cfg, FireMode mode) {
     case FS_POST_DELAY: {
       if ((int32_t)(now - stateEndUs) < 0) return;
       state = FS_IDLE;
-      if (shotsRemaining == 0) cycleArmed = false;
+      if (shotsRemaining == 0) {
+        cycleArmed = false;
+        if (lastCycleWasSemi) lastSemiShotEndMs = millis();
+      }
       break;
     }
   }

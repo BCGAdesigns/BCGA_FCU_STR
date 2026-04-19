@@ -28,13 +28,13 @@ This project is designed, manufactured and maintained by **[BCGA Airsoft](https:
 
 ## Why BCGA FCU?
 
-Compared to commercial FCUs (PolarStar REV3, Wolverine BLINC, GATE TITAN II, Gorilla FCU), the BCGA FCU has concrete advantages — and a few honest limitations. This section is factual; the full side-by-side tables are in [`firmware/MANUAL_EN.md`](firmware/MANUAL_EN.md) section 15.
+Compared to commercial FCUs (PolarStar REV3, Wolverine BLINC, GATE TITAN II, Gorilla FCU), the BCGA FCU has concrete advantages — and a few honest limitations. This section is factual; the full side-by-side tables are in [`firmware/MANUAL_EN.md`](firmware/MANUAL_EN.md) section 16.
 
 ### Where the BCGA FCU wins
 
 1. **Native WiFi vs Bluetooth.** Configure from any browser on any device — iOS, Android, PC, Linux. No app install, no pairing, no vendor lock-in. TITAN II (BLE 5.2) and BLINC require proprietary apps.
 
-2. **4 independent timings (DN/DR/DP/DB).** Each phase of the D8PA cycle has its own parameter. Feeding (DN), sealing (DR), FPS (DP) and post-shot debounce (DB) tune independently without trade-offs. Commercial single-solenoid FCUs use a single dwell value.
+2. **4 independent timings (DN/DR/DP/DB).** Each phase of the D8PA cycle has its own parameter. Feeding (DN), sealing (DR), FPS (DP) and post-shot debounce (DB) tune independently without trade-offs. Commercial FCUs top out at 3 user-facing timings (REV3 in dual-solenoid mode: dP/dN/dr) or a single dwell on single-solenoid setups — none expose a dedicated post-shot debounce.
 
 3. **Automatic Hall trigger EMI noise calibration.** The only FCU on the market with a routine that fires the solenoids dry and measures the EMI kick on the ADC, widening the Hall deadband automatically. Eliminates ghost fires without sacrificing trigger sensitivity.
 
@@ -50,7 +50,7 @@ Compared to commercial FCUs (PolarStar REV3, Wolverine BLINC, GATE TITAN II, Gor
 
 9. **Live theoretical ROF in the UI.** The web panel shows maximum achievable ROF as you move the sliders — no chrono needed for a first-pass estimate.
 
-10. **Native D8PA + S8PA per slot.** Each slot is independently S8PA or D8PA. Third-party FCUs (Gorilla, TITAN II) need adapter harnesses to drive a dual-solenoid engine.
+10. **Per-slot S8PA/D8PA switching in software.** Each of the 3 slots independently stores the engine type — flip a slot between S8PA and D8PA directly from the web UI, no hardware change. Commercial FCUs that cover both architectures (TITAN II with PULSAR S/D, Gorilla) do it through separate dedicated cable harnesses per engine, not per-slot software switching.
 
 ### Honest limitations
 
@@ -122,7 +122,7 @@ The AP shuts off automatically after 10 min of web inactivity.
 2. Order the components from the matching `BOM`. Most parts are available on [LCSC](https://www.lcsc.com/).
 3. Solder following the `SCH` (schematic).
 4. Flash the firmware from `firmware/BCGA_FCU_{STR,PRO}/` via the Arduino IDE.
-5. Calibrate the Hall trigger and selector from the web UI (section 6 and 7 of the manual).
+5. Calibrate the Hall trigger and selector from the web UI (sections 7 and 8 of the manual).
 
 > ⚠️ **STR** requires basic THT soldering skills (TO-220 MOSFETs, through-hole headers). **PRO** requires basic SMD soldering skills. For a plug-and-play board, buy the pre-assembled version at [bcgaairsoft.com](https://bcgaairsoft.com).
 

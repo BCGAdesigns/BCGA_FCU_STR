@@ -12,19 +12,20 @@ This manual is practical: each section leads with **what to tweak to get what re
 
 1. [Understand the FCU in 1 minute](#1-understand-the-fcu-in-1-minute)
 2. [The 4 timings — tuning guide](#2-the-4-timings--tuning-guide)
-3. [Recommended tuning workflow](#3-recommended-tuning-workflow)
-4. [Firing type: S8PA vs D8PA](#4-firing-type-s8pa-vs-d8pa)
-5. [Selector — 2 or 3 positions](#5-selector--2-or-3-positions)
-6. [Hall trigger — step-by-step calibration](#6-hall-trigger--step-by-step-calibration)
-7. [Hall selector — step-by-step calibration](#7-hall-selector--step-by-step-calibration)
-8. [First use and web panel access](#8-first-use-and-web-panel-access)
-9. [Slots](#9-slots)
-10. [Useful flags (invert trigger, swap MOS, silent)](#10-useful-flags)
-11. [Limit rate of fire (ROF limit and Semi ROF)](#11-limit-rate-of-fire)
-12. [Diagnostics and WiFi](#12-diagnostics-and-wifi)
-13. [Deep sleep and debug mode](#13-deep-sleep-and-debug-mode)
-14. [STR vs PRO differences](#14-str-vs-pro-differences)
-15. [BCGA FCU vs commercial FCUs](#15-bcga-fcu-vs-commercial-fcus)
+3. [Quick start — reach target FPS first](#3-quick-start--reach-target-fps-first)
+4. [Recommended tuning workflow](#4-recommended-tuning-workflow)
+5. [Firing type: S8PA vs D8PA](#5-firing-type-s8pa-vs-d8pa)
+6. [Selector — 2 or 3 positions](#6-selector--2-or-3-positions)
+7. [Hall trigger — step-by-step calibration](#7-hall-trigger--step-by-step-calibration)
+8. [Hall selector — step-by-step calibration](#8-hall-selector--step-by-step-calibration)
+9. [First use and web panel access](#9-first-use-and-web-panel-access)
+10. [Slots](#10-slots)
+11. [Useful flags (invert trigger, swap MOS, silent)](#11-useful-flags)
+12. [Limit rate of fire (ROF limit and Semi ROF)](#12-limit-rate-of-fire)
+13. [Diagnostics and WiFi](#13-diagnostics-and-wifi)
+14. [Deep sleep and debug mode](#14-deep-sleep-and-debug-mode)
+15. [STR vs PRO differences](#15-str-vs-pro-differences)
+16. [BCGA FCU vs commercial FCUs](#16-bcga-fcu-vs-commercial-fcus)
 
 ---
 
@@ -51,7 +52,7 @@ Length of the **nozzle (SOL2)** pulse. This is how long the nozzle stays open fo
 
 | If DN increases | If DN decreases |
 |---|---|
-| ✅ easier feeding (heavy BBs, low pressure, cold shot) | ✅ saves gas, prevents double-feed |
+| ✅ easier feeding (heavy BBs, low pressure, cold shot) | ✅ saves air, prevents double-feed |
 | ❌ **risk of double-feed** (2 BBs drop) | ❌ empty shots / inconsistent feeding if the return spring is slow |
 | ❌ more nozzle wear | ❌ may not seal before DP fires |
 
@@ -72,15 +73,15 @@ Length of the **nozzle (SOL2)** pulse. This is how long the nozzle stays open fo
 
 ### DP — Poppet Dwell (the shot)
 
-Length of the **poppet (SOL1)** pulse. This is how long gas can flow through the nozzle pushing the BB.
+Length of the **poppet (SOL1)** pulse. This is how long air can flow through the nozzle pushing the BB.
 
 | If DP increases | If DP decreases |
 |---|---|
-| ✅ **higher FPS** (more gas behind the BB) | ✅ saves gas (more shots per bottle/mag) |
-| ❌ gas waste after BB has left | ✅ higher ROF (valve closes fast) |
+| ✅ **higher FPS** (more air behind the BB) | ✅ saves air (more shots per bottle/mag) |
+| ❌ air waste after BB has left | ✅ higher ROF (valve closes fast) |
 | ❌ may delay poppet recycle | ❌ **FPS below target**, weak shot |
 
-**Rule of thumb:** with a chrono, tune DP up to your target FPS. Anything more just wastes gas.
+**Rule of thumb:** with a chrono, tune DP up to your target FPS. Anything more just wastes air.
 
 ### DB — Trigger Debounce (D8PA only)
 
@@ -116,9 +117,30 @@ Safe starting point. Tune from there.
 
 ---
 
-## 3. Recommended tuning workflow
+## 3. Quick start — reach target FPS first
 
-Follow this order — each step depends on the previous one being stable.
+New to the BCGA FCU? Before anything else, hit your target FPS. The rest of the tuning only makes sense once the chrono is where you want it.
+
+1. **Set the regulator to 100 psi.** Default starting pressure for most D8PA setups.
+2. **Keep the default timings** (`DN=18 / DR=26 / DP=25 / DB=100`). They ship loaded.
+3. **Fire over a chrono.** Is the FPS (or joule) on target?
+   - **Yes** → skip straight to section 4 and tune feeding, sealing and accuracy.
+   - **No, too low** → step 4.
+4. **Push DP to the slider maximum** (80 ms). Chrono again.
+   - **FPS jumped to target** → lower DP step-by-step until FPS starts to drop, then add 1–2 ms back. That's your minimum efficient DP. Go to section 4.
+   - **FPS still below target** → step 5.
+5. **Raise the regulator to 110 psi.** Chrono again.
+   - **On target** → lower DP until you find the minimum that holds target FPS. Go to section 4.
+   - **Still low** → raise to **120 psi** and chrono again.
+6. Once target FPS is stable, **go to section 4** and tune DN (feeding), DR (sealing) and DB (accuracy) in that order.
+
+> **Principle:** FPS is driven mostly by **air pressure × DP**. The other 3 timings shape how the cycle *behaves* (feeding, sealing, accuracy, ROF) — they don't add FPS. Nail FPS first with DP/pressure, tune everything else after.
+
+---
+
+## 4. Recommended tuning workflow
+
+Follow this order — each step depends on the previous one being stable. Assumes you already hit your target FPS per section 3.
 
 1. **Feeding (DN)** — slow SEMI. Lower DN until you get empty shots. Add 2 ms back.
 2. **Sealing (DR)** — fast SEMI. If chrono wobbles, raise DR 2 ms at a time.
@@ -127,11 +149,11 @@ Follow this order — each step depends on the previous one being stable.
 5. **Cadence (ROF limit)** — optional. Caps maximum ROF independently of timings.
 6. **Anti-spam (Semi ROF)** — optional. Minimum time between SEMI pulls.
 
-> ⚠️ Always verify with a chrono. FPS drifts with bottle temperature / gas level.
+> ⚠️ Always verify with a chrono. FPS drifts with bottle temperature / air level.
 
 ---
 
-## 4. Firing type: S8PA vs D8PA
+## 5. Firing type: S8PA vs D8PA
 
 Chosen per slot in the first section of the panel.
 
@@ -140,7 +162,7 @@ Chosen per slot in the first section of the panel.
 
 ---
 
-## 5. Selector — 2 or 3 positions
+## 6. Selector — 2 or 3 positions
 
 Enabling "3 positions" **requires a Hall selector** (a microswitch can only distinguish 2 states). Enabling it reveals Pos 3 in the UI.
 
@@ -159,17 +181,17 @@ Common examples:
 
 ---
 
-## 6. Hall trigger — step-by-step calibration
+## 7. Hall trigger — step-by-step calibration
 
 Use Hall for a **wear-free trigger** with an **adjustable fire point**.
 
 **Expected hardware:** linear Hall sensor (DRV5055 or similar) powered from 3.3 V, output wired to **PIN_TRIG** (GPIO 0 on both variants). Magnet on the trigger lever.
 
-### 6.1 Mode selection
+### 7.1 Mode selection
 
 **Input** section → "Trigger type" → **Hall** → **Save**.
 
-### 6.2 Quick calibration (single-point)
+### 7.2 Quick calibration (single-point)
 
 Covers most cases — 30 seconds.
 
@@ -181,7 +203,7 @@ Covers most cases — 30 seconds.
 Fires before reaching the point → capture at a deeper pull.
 Won't fire even at full pull → capture at a shallower pull.
 
-### 6.3 Full calibration (maximum precision)
+### 7.3 Full calibration (maximum precision)
 
 In the **Trigger calibration** section:
 
@@ -212,17 +234,17 @@ In the **Trigger calibration** section:
 
 ---
 
-## 7. Hall selector — step-by-step calibration
+## 8. Hall selector — step-by-step calibration
 
 A Hall selector enables **3 physical positions** (classic SAFE/SEMI/FULL) or just more reliable 2-position reading.
 
 **Expected hardware:** linear Hall sensor on the gearbox body, magnet on the selector plate. Output wired to **PIN_SEL** (GPIO 1).
 
-### 7.1 Mode selection
+### 8.1 Mode selection
 
 **Input** section → "Selector type" → **Hall** → check "3 positions" if applicable → **Save**.
 
-### 7.2 Calibration
+### 8.2 Calibration
 
 **Selector calibration** section:
 
@@ -233,13 +255,13 @@ A Hall selector enables **3 physical positions** (classic SAFE/SEMI/FULL) or jus
 5. FCU computes thresholds between each pair of samples.
 6. **Save slot**.
 
-### 7.3 Assign modes
+### 8.3 Assign modes
 
 Under **Selector → Pos 1/2/3 Mode**, choose a firing mode per position. These fields apply regardless of input type (digital or Hall).
 
 ---
 
-## 8. First use and web panel access
+## 9. First use and web panel access
 
 ### First-boot
 
@@ -269,7 +291,7 @@ AP shuts off automatically after **10 min of web inactivity** (3 beeps).
 
 ---
 
-## 9. Slots
+## 10. Slots
 
 3 independent slots. Each one holds **everything**: firing type (S8PA/D8PA), timings, selector, Hall calibrations, flags. Switch via the buttons at the top of the page.
 
@@ -282,7 +304,7 @@ The FCU remembers the last slot used and returns to it after reboot.
 
 ---
 
-## 10. Useful flags
+## 11. Useful flags
 
 - **Invert trigger** — check if your microswitch is active-HIGH (rare).
 - **Swap MOS** (D8PA only) — swaps SOL1↔SOL2 **in software**. Use if you soldered them backwards and don't want to desolder.
@@ -290,7 +312,7 @@ The FCU remembers the last slot used and returns to it after reboot.
 
 ---
 
-## 11. Limit rate of fire
+## 12. Limit rate of fire
 
 ### ROF limit (rounds/sec)
 
@@ -309,7 +331,7 @@ Cooldown **between SEMI pulls**. Prevents trigger spam (fast finger).
 
 ---
 
-## 12. Diagnostics and WiFi
+## 13. Diagnostics and WiFi
 
 ### MOS test
 
@@ -336,7 +358,7 @@ Two ways:
 
 ---
 
-## 13. Deep sleep and debug mode
+## 14. Deep sleep and debug mode
 
 After **60 min of trigger inactivity** the FCU enters deep-sleep (<10 µA draw). The next trigger pull **wakes the MCU via full reboot** — the second pull actually fires.
 
@@ -352,7 +374,7 @@ Timeout drops from 60 min to 5 min. **Re-comment before shipping to production.*
 
 ---
 
-## 14. STR vs PRO differences
+## 15. STR vs PRO differences
 
 | Feature | STR | PRO |
 |---|:---:|:---:|
@@ -370,21 +392,21 @@ Timeout drops from 60 min to 5 min. **Re-comment before shipping to production.*
 
 ---
 
-## 15. BCGA FCU vs commercial FCUs
+## 16. BCGA FCU vs commercial FCUs
 
-This section compares the BCGA FCU to the main commercial FCUs in the airsoft HPA market (PolarStar REV3, Wolverine BLINC, GATE TITAN II). It is factual and includes both advantages and gaps.
+This section compares the BCGA FCU to the main commercial FCUs in the airsoft HPA market (PolarStar REV3, Wolverine BLINC, GATE TITAN II, Gorilla FCU). It is factual and includes both advantages and gaps.
 
-### 15.1 Where the BCGA FCU wins
+### 16.1 Where the BCGA FCU wins
 
-1. **Native WiFi vs Bluetooth.** Configure from any browser on any device — iOS, Android, PC, Linux, anything that opens a web page. No app install, no pairing, no vendor lock-in. TITAN II (BLE 5.2) and BLINC require proprietary apps.
+1. **Native WiFi vs Bluetooth.** Configure from any browser on any device — iOS, Android, PC, Linux, anything that opens a web page. No app install, no pairing, no vendor lock-in. TITAN II (BLE 5.2), BLINC and Gorilla all require proprietary apps.
 
-2. **4 independent timings (DN/DR/DP/DB).** Each phase of the D8PA cycle has its own parameter. Feeding (DN), sealing (DR), FPS (DP) and post-shot debounce (DB) are tuned independently without trade-offs. Commercial single-solenoid FCUs use a single dwell value.
+2. **4 independent timings (DN/DR/DP/DB).** Each phase of the D8PA cycle has its own parameter. Feeding (DN), sealing (DR), FPS (DP) and post-shot debounce (DB) are tuned independently without trade-offs. Commercial FCUs top out at 3 user-facing timings (REV3 in dual-solenoid mode: dP/dN/dr) or a single dwell on single-solenoid setups. No commercial FCU exposes a dedicated post-shot debounce.
 
 3. **Automatic Hall trigger EMI noise calibration.** The only FCU on the market with a routine that fires the solenoids dry and measures the EMI kick on the ADC, widening the Hall deadband automatically. Eliminates ghost fires without sacrificing trigger sensitivity.
 
 4. **3 complete independent slots.** Each slot stores **everything** — engine type, all 4 timings, selector config, individual Hall calibrations, flags. Switching slots = full game-profile switch.
 
-5. **Open-source, GPL v3.** All code is public. Audit, modify, compile and flash without depending on proprietary firmware or a vendor app. TITAN II, BLINC and REV3 are fully closed.
+5. **Open-source, GPL v3.** All code is public. Audit, modify, compile and flash without depending on proprietary firmware or a vendor app. TITAN II, BLINC, REV3 and Gorilla are fully closed.
 
 6. **Hall trigger with 2-point calibration + automatic hysteresis.** Captures the exact fire point and computes a hysteresis band from real measurements — not fixed values. No mechanical potentiometer.
 
@@ -394,9 +416,9 @@ This section compares the BCGA FCU to the main commercial FCUs in the airsoft HP
 
 9. **Live theoretical ROF in the UI.** The web panel shows maximum achievable ROF as you move the sliders — no chrono needed for a first-pass estimate.
 
-10. **Native D8PA + S8PA per slot.** Each slot is independently S8PA or D8PA. Third-party FCUs (Gorilla, TITAN II) need adapter harnesses to drive a dual-solenoid engine.
+10. **Per-slot S8PA/D8PA switching in software.** Each of the 3 slots independently stores the engine type — flip a slot between S8PA and D8PA directly from the web UI, no hardware change. Commercial FCUs that cover both architectures (TITAN II with PULSAR S/D, Gorilla) do it through separate dedicated cable harnesses per engine, not per-slot software switching.
 
-### 15.2 Honest limitations
+### 16.2 Honest limitations
 
 Buyers need to know these before choosing the BCGA FCU:
 
@@ -405,24 +427,25 @@ Buyers need to know these before choosing the BCGA FCU:
 3. **Kill latch and onboard buzzer are PRO-only.** The STR variant has no battery voltage read and no LiPo deep-discharge cut-off. Use with caution on 2S/3S packs without external protection.
 4. **First pull after deep sleep wakes via reboot.** After 60 min of idle the FCU deep-sleeps. The next pull wakes the MCU through a full reboot — the **second** pull is the one that actually fires. Different from FCUs that sleep via MOSFET gate-hold.
 
-### 15.3 Side-by-side comparison
+### 16.3 Side-by-side comparison
 
-| Dimension | BCGA FCU STR/PRO | PolarStar REV3 | Wolverine BLINC | GATE TITAN II |
-|---|---|---|---|---|
-| MCU | ESP32-C3 | Proprietary | Proprietary | ARM + BLE 5.2 |
-| License | **GPL v3 (open-source)** | Proprietary | Proprietary | Proprietary |
-| Dual-solenoid | ✅ (D8PA) | ✅ (FCFE) | ❌ | ✅ (PULSAR D) |
-| Independent timings | **4 (DN/DR/DP/DB)** | 3 (dual) / 1 (single) | 1 + autotune | Auto sync or manual |
-| Interface | **Web UI over WiFi** | LCD + joystick | BLE app | BLE 5.2 app |
-| App required | **No** | No | ✅ required | ✅ required |
-| Hall noise calibration | **✅ unique on the market** | ❌ | ❌ | ❌ |
-| Configuration slots | **3 complete** | 1 set | 1 profile | Per-engine profiles |
-| Binary trigger | ❌ | Hack | ✅ | ✅ |
-| Tournament lock | ❌ | — | ❌ | ✅ Expert |
-| Approximate cost | **~R$50–100 BOM** | ~US$80 FCU | ~US$160 | ~US$300–440 combo |
-| Deep sleep | ✅ 60 min | — | ✅ | ✅ |
+| Dimension | BCGA FCU STR/PRO | PolarStar REV3 | Wolverine BLINC | GATE TITAN II | Gorilla FCU |
+|---|---|---|---|---|---|
+| MCU | ESP32-C3 | Proprietary | Proprietary | ARM + BLE 5.2 | Proprietary + BLE |
+| License | **GPL v3 (open-source)** | Proprietary | Proprietary | Proprietary | Proprietary |
+| Single-solenoid | ✅ (S8PA) | ✅ (FCF1) | ✅ | ✅ (PULSAR S) | ✅ |
+| Dual-solenoid | ✅ (D8PA) | ✅ (FCFE) | ❌ (single only) | ✅ (PULSAR D) | ✅ |
+| Independent timings | **4 (DN/DR/DP/DB)** | 3 (dual) / 1 (single) | 1 + autotune | Auto cycle-sync or manual | Separate SEMI/AUTO dwells |
+| Interface | **Web UI over WiFi** | LCD + joystick | BLE app | BLE 5.2 app | BLE app |
+| App required | **No** | No | ✅ required | ✅ required | ✅ required |
+| Hall noise calibration | **✅ unique on the market** | ❌ | ❌ | ❌ | ❌ |
+| Configuration slots | **3 complete** | 1 set | 1 profile | Per-engine profiles | 1 set |
+| Binary trigger | ❌ | Hack (burst=01) | ✅ | ✅ | ✅ |
+| Tournament lock | ❌ | — | ❌ | ✅ (Expert) | ✅ |
+| Approximate cost | **~R$50–100 BOM** | ~US$80 FCU | ~US$160 | ~US$300–440 combo | ~US$200 |
+| Deep sleep | ✅ 60 min | — | ✅ | ✅ | — |
 
-### 15.4 Who the BCGA FCU is for
+### 16.4 Who the BCGA FCU is for
 
 - **DIY HPA builders** who want full control over the firing cycle with 4 independent timings.
 - **Field installers** without a specific Bluetooth app on their phone — any browser works.
@@ -430,7 +453,7 @@ Buyers need to know these before choosing the BCGA FCU:
 - **Open-source advocates** who won't ship a closed-firmware gun.
 - **Anyone who wants 3 distinct game profiles** in a single FCU (skirmish, DMR, CQB).
 
-The BCGA FCU is **not** the right choice if you need binary trigger or password-locked tournament mode out of the box — pick TITAN II or BLINC for those.
+The BCGA FCU is **not** the right choice if you need binary trigger or password-locked tournament mode out of the box — pick TITAN II, BLINC or Gorilla for those.
 
 ---
 

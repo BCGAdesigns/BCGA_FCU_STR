@@ -20,7 +20,7 @@ Duas variantes de hardware compartilham o mesmo firmware e a mesma interface web
 - **STR** (Starter) — montagem em perfboard / THT, componentes de fácil aquisição, ideal para makers e hobbyistas aprendendo eletrônica HPA.
 - **PRO** — PCB SMD comercial com monitoramento de bateria, kill latch para LiPo, botão WiFi dedicado e buzzer integrado.
 
-As duas variantes suportam **S8PA** (engines de 1 solenoide: F2, Pulsar, JACK-style) e **D8PA** (engines de 2 solenoides: Jack, Backdraft, Fusion-style) por slot. Você escolhe o tipo de engine por perfil — a UI se adapta automaticamente.
+As duas variantes suportam **S8PA** (engines de 1 solenoide — PolarStar JACK / F1, Wolverine INFERNO, GATE PULSAR S) e **D8PA** (engines de 2 solenoides — PolarStar F2 / Fusion Engine, GATE PULSAR D) por slot. Você escolhe o tipo de engine por perfil — a UI se adapta automaticamente.
 
 O projeto é desenhado, fabricado e mantido pela **[BCGA Airsoft](https://bcgaairsoft.com)** no Brasil. É **open-source sob GPL v3** — você pode auditar, modificar, fabricar e vender, desde que derivados mantenham a mesma licença e creditem o projeto original.
 

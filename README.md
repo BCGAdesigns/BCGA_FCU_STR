@@ -20,7 +20,7 @@ Two hardware variants share the same firmware and web UI:
 - **STR** (Starter) — perfboard / THT build, easily sourced components, ideal for makers and hobbyists learning HPA electronics.
 - **PRO** — commercial SMD PCB with battery monitoring, LiPo kill latch, dedicated WiFi button and onboard buzzer.
 
-Both variants support **S8PA** (1-solenoid engines: F2, Pulsar, JACK-style) and **D8PA** (2-solenoid engines: Jack, Backdraft, Fusion-style) per slot. You pick the engine type per profile — the UI adapts automatically.
+Both variants support **S8PA** (1-solenoid engines — PolarStar JACK / F1, Wolverine INFERNO, GATE PULSAR S) and **D8PA** (2-solenoid engines — PolarStar F2 / Fusion Engine, GATE PULSAR D) per slot. You pick the engine type per profile — the UI adapts automatically.
 
 This project is designed, manufactured and maintained by **[BCGA Airsoft](https://bcgaairsoft.com)** in Brazil. It is **open-source under GPL v3** — you can audit, modify, manufacture and sell, as long as derivatives keep the same license and credit the original project.
 

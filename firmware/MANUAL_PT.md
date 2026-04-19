@@ -32,8 +32,8 @@ Esse manual é prático: cada seção começa com **o que mexer para obter o qu�
 
 A FCU controla **1 ou 2 solenoides** que substituem o gatilho mecânico de uma gearbox HPA. Em cada tiro, ela envia pulsos eletricamente calibrados para os solenoides, na ordem correta, com as esperas corretas entre eles. Tuning = ajustar esses pulsos para o teu sistema específico (pressão, bucking, BB, peso).
 
-- **S8PA** (1 solenoide): gearboxes tipo F2/Pulsar. Só o poppet é controlado.
-- **D8PA** (2 solenoides): gearboxes tipo Jack/Backdraft. Nozzle + poppet controlados separadamente.
+- **S8PA** (1 solenoide): PolarStar JACK / F1, Wolverine INFERNO, GATE PULSAR S, ou qualquer outra gearbox de 1 solenoide. Só o poppet é controlado.
+- **D8PA** (2 solenoides): PolarStar F2 / Fusion Engine, GATE PULSAR D, ou qualquer outra gearbox de 2 solenoides. Nozzle + poppet controlados separadamente.
 
 ---
 
@@ -106,7 +106,7 @@ Espera após o poppet fechar, antes do gatilho poder armar o próximo ciclo. Fis
 
 **Regra prática:** atire em full-auto num alvo a 20 m. Se aparecerem flyers, aumente DB 20 units (2 ms) por vez.
 
-### Defaults (D8PA genérico, Jack-style, 110 psi, BB 0.28)
+### Defaults (D8PA genérico, 110 psi, BB 0.28)
 
 ```
 DN = 18 ms    DR = 26 ms    DP = 25 ms    DB = 100 units (10 ms)
@@ -135,8 +135,8 @@ Siga nesta ordem — cada passo depende do anterior estar estável.
 
 Escolhido por slot, na primeira seção do painel.
 
-- **S8PA** — só o poppet é pulsado. Ciclo: `DP → DR → repete`. Use com F2, Pulsar, ou qualquer gearbox de 1 solenoide. Os campos DN, DB, swap MOS e o botão de teste do SOL 2 somem da interface.
-- **D8PA** — nozzle + poppet separados. Ciclo: `DN → DR → DP → DB → repete`. Use com Jack, Backdraft, e qualquer sistema com 2 solenoides.
+- **S8PA** — só o poppet é pulsado. Ciclo: `DP → DR → repete`. Use com PolarStar JACK / F1, Wolverine INFERNO, GATE PULSAR S, ou qualquer gearbox de 1 solenoide. Os campos DN, DB, swap MOS e o botão de teste do SOL 2 somem da interface.
+- **D8PA** — nozzle + poppet separados. Ciclo: `DN → DR → DP → DB → repete`. Use com PolarStar F2 / Fusion Engine, GATE PULSAR D, ou qualquer sistema com 2 solenoides.
 
 ---
 

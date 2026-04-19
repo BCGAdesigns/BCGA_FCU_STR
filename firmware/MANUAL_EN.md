@@ -32,8 +32,8 @@ This manual is practical: each section leads with **what to tweak to get what re
 
 The FCU drives **1 or 2 solenoids** that replace the mechanical trigger of an HPA gearbox. For each shot it sends electrically calibrated pulses to the solenoids, in the correct order, with the correct waits between them. Tuning = adjusting those pulses for your specific setup (pressure, bucking, BB mass).
 
-- **S8PA** (1 solenoid): F2/Pulsar-style gearboxes. Only the poppet is driven.
-- **D8PA** (2 solenoids): Jack/Backdraft-style gearboxes. Nozzle and poppet driven separately.
+- **S8PA** (1 solenoid): PolarStar JACK / F1, Wolverine INFERNO, GATE PULSAR S, or any other 1-solenoid gearbox. Only the poppet is driven.
+- **D8PA** (2 solenoids): PolarStar F2 / Fusion Engine, GATE PULSAR D, or any other 2-solenoid gearbox. Nozzle and poppet driven separately.
 
 ---
 
@@ -106,7 +106,7 @@ Wait after the poppet closes, before the trigger can re-arm the next cycle. Phys
 
 **Rule of thumb:** full-auto on a 20 m target. If flyers appear, bump DB by 20 units (2 ms) at a time.
 
-### Defaults (generic D8PA, Jack-style, 110 psi, 0.28 g BB)
+### Defaults (generic D8PA, 110 psi, 0.28 g BB)
 
 ```
 DN = 18 ms    DR = 26 ms    DP = 25 ms    DB = 100 units (10 ms)
@@ -135,8 +135,8 @@ Follow this order — each step depends on the previous one being stable.
 
 Chosen per slot in the first section of the panel.
 
-- **S8PA** — only the poppet is pulsed. Cycle: `DP → DR → repeat`. Use with F2, Pulsar, or any 1-solenoid gearbox. The DN, DB, MOS swap fields and the SOL 2 test button are hidden.
-- **D8PA** — separate nozzle + poppet. Cycle: `DN → DR → DP → DB → repeat`. Use with Jack, Backdraft, and any 2-solenoid system.
+- **S8PA** — only the poppet is pulsed. Cycle: `DP → DR → repeat`. Use with PolarStar JACK / F1, Wolverine INFERNO, GATE PULSAR S, or any 1-solenoid gearbox. The DN, DB, MOS swap fields and the SOL 2 test button are hidden.
+- **D8PA** — separate nozzle + poppet. Cycle: `DN → DR → DP → DB → repeat`. Use with PolarStar F2 / Fusion Engine, GATE PULSAR D, or any 2-solenoid system.
 
 ---
 

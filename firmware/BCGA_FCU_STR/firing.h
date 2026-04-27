@@ -1,7 +1,7 @@
 // BCGA FCU STR — firing.h
 // Non-blocking firing engine for S8PA (single) and D8PA (dual) solenoids.
 // Cycle order:
-//   D8PA: SOL2 pulse DN → wait DR → SOL1 pulse DP → wait DL → repeat.
+//   D8PA: SOL2 pulse DN → wait DR → SOL1 pulse DP → wait DB → repeat.
 //   S8PA: SOL1 pulse DP → wait DR → repeat.
 // Hardware assumed active-HIGH for both MOSFETs (no invert).
 

@@ -3,12 +3,13 @@
 #include "battery.h"
 
 namespace {
-uint32_t lastPollMs = 0;
-uint16_t mvCache    = 0;
-uint8_t  cells      = 0;
-bool     low        = false;
-bool     critical   = false;
-bool     cut        = false;
+uint32_t lastPollMs    = 0;
+uint16_t mvCache       = 0;
+uint8_t  cells         = 0;
+bool     low           = false;
+bool     critical      = false;
+bool     cut           = false;
+bool     lockoutActive = false;
 
 uint16_t readMvOnce() {
   uint32_t acc = 0;
@@ -40,8 +41,6 @@ void batteryBegin() {
   pinMode(PIN_VBAT, INPUT);
   analogReadResolution(12);
   analogSetPinAttenuation(PIN_VBAT, ADC_11db);
-  pinMode(PIN_LATCH, OUTPUT);
-  digitalWrite(PIN_LATCH, HIGH);   // hold self alive
   // Prime
   uint16_t mv = readMvOnce();
   mvCache = mv;
@@ -65,6 +64,5 @@ bool     batteryLow()      { return low; }
 bool     batteryCritical() { return critical; }
 bool     batteryCut()      { return cut; }
 
-void batteryKillLatch() {
-  digitalWrite(PIN_LATCH, LOW);
-}
+void batteryEnterLockout() { lockoutActive = true; }
+bool batteryInLockout()    { return lockoutActive; }

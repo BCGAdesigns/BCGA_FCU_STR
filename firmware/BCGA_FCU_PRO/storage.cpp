@@ -9,7 +9,7 @@ Preferences prefs;
 const char* NS = "bcgafcu";
 // Bump when defaults or schema change. Mismatch on boot → wipe namespace and
 // reinit, so users get the new defaults without manual factory-reset.
-const uint8_t STORAGE_INIT_VERSION = 5;
+const uint8_t STORAGE_INIT_VERSION = 7;
 bool firstBootFlag = false;
 }
 
@@ -52,7 +52,7 @@ void storageDefaultSlot(uint8_t idx, SlotConfig& out) {
   out.dn            = DEFAULT_DN_MS;
   out.dr            = DEFAULT_DR_MS;
   out.dp            = DEFAULT_DP_MS;
-  out.dl            = DEFAULT_DL_MS;
+  out.db            = DEFAULT_DB_UNITS;
   out.rofLimit      = DEFAULT_ROF_LIMIT;
   out.semiRofMs     = DEFAULT_SEMI_ROF_MS;   // 0 = disabled
   out.hallTrigLow   = 1500;

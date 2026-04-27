@@ -1,6 +1,6 @@
 // BCGA FCU STR — firing.cpp
 // State machine — never blocks (except firingPulseCycleWithSample for noise cal).
-// Timings stored as MILLISECONDS in SlotConfig; converted to microseconds here.
+// DN/DR/DP stored as ms; DB stored as units of 0.1 ms. Converted to µs here.
 // Active-HIGH MOSFETs. mosfetSwap (D8PA only) swaps logical roles of SOL1/SOL2.
 
 #include "firing.h"
@@ -13,7 +13,7 @@ enum FireState : uint8_t {
   FS_NOZZLE_PULSE,    // D8PA: SOL2 driving for DN ms
   FS_RETURN_WAIT,     // D8PA: both off for DR ms (spring seals bucking)
   FS_POPPET_PULSE,    // SOL1 driving for DP ms (the actual shot)
-  FS_POST_DELAY       // both off — D8PA waits DL; S8PA waits DR
+  FS_POST_DELAY       // both off — D8PA waits DB; S8PA waits DR
 };
 
 FireState  state          = FS_IDLE;
@@ -41,6 +41,15 @@ uint16_t clampMs(uint16_t v) {
 }
 
 inline uint32_t msToUs(uint16_t ms) { return (uint32_t)clampMs(ms) * 1000UL; }
+
+uint16_t clampDbUnits(uint16_t u) {
+  if (u < DB_MIN_UNITS) return DB_MIN_UNITS;
+  if (u > DB_MAX_UNITS) return DB_MAX_UNITS;
+  return u;
+}
+
+// DB is stored in units of 0.1 ms. One unit = 100 µs.
+inline uint32_t dbUnitsToUs(uint16_t u) { return (uint32_t)clampDbUnits(u) * 100UL; }
 
 void recomputeRof(const SlotConfig& cfg) {
   if (cfg.rofLimit == 0) { minIntervalUs = 0; return; }
@@ -138,9 +147,9 @@ void firingUpdate(const SlotConfig& cfg, FireMode mode) {
       if ((int32_t)(now - stateEndUs) < 0) return;
       writeMos(pinPoppet(cfg), false);
       state = FS_POST_DELAY;
-      // D8PA uses DL; S8PA uses DR as inter-shot rest.
-      uint16_t postMs = (cfg.solenoidCount == 2) ? cfg.dl : cfg.dr;
-      stateEndUs = now + msToUs(postMs);
+      // D8PA uses DB (0.1-ms units); S8PA uses DR (ms) as inter-shot rest.
+      stateEndUs = now + ((cfg.solenoidCount == 2) ? dbUnitsToUs(cfg.db)
+                                                   : msToUs(cfg.dr));
       if (shotsRemaining != 0xFFFF && shotsRemaining > 0) shotsRemaining--;
       break;
     }
@@ -228,8 +237,8 @@ NoiseReport firingPulseCycleWithSample(const SlotConfig& cfg, uint8_t adcPin) {
     writeMos(pp, true);
     sampleFor(msToUs(cfg.dp));
     writeMos(pp, false);
-    // DL post-shot delay
-    sampleFor(msToUs(cfg.dl));
+    // DB post-shot delay (0.1-ms units)
+    sampleFor(dbUnitsToUs(cfg.db));
   } else {
     // S8PA: DP poppet ON, then DR rest
     writeMos(pp, true);

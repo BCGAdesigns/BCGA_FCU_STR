@@ -8,9 +8,13 @@
 #include "storage.h"
 #include "buzzer.h"
 #include "web_server.h"
+#include "display.h"
 
 #include <WiFi.h>
 #include <DNSServer.h>
+
+// Defined in BCGA_FCU_STR.ino — resets the inactivity-alarm watchdog.
+extern void noteUserActivity();
 
 namespace {
 DNSServer dns;
@@ -33,6 +37,7 @@ void doStart() {
   lastActMs  = startMs;
   buzzerPlay(BUZZ_WIFI_ON);
   LOG("WiFi AP up: %s @ %s\n", WIFI_SSID_DEFAULT, ip.toString().c_str());
+  displayWifiUp(ip);
 }
 
 void doStop() {
@@ -44,6 +49,7 @@ void doStop() {
   active = false;
   buzzerPlay(BUZZ_WIFI_OFF);
   LOGLN("WiFi off");
+  displayWifiDown();
 }
 }  // namespace
 
@@ -56,7 +62,10 @@ void wifiManagerBegin() {
 void wifiStart()         { doStart(); }
 void wifiStop()          { doStop(); }
 bool wifiActive()        { return active; }
-void wifiNoteActivity()  { if (active) lastActMs = millis(); }
+void wifiNoteActivity()  {
+  if (active) lastActMs = millis();
+  noteUserActivity();
+}
 
 void wifiManagerUpdate() {
   if (active) {

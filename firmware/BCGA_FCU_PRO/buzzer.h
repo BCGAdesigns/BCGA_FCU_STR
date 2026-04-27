@@ -17,7 +17,8 @@ enum BuzzPattern : uint8_t {
   BUZZ_BATT_CUT,        // 8: long sad tone before kill
   BUZZ_WIFI_ON,         // 9: rising arpeggio
   BUZZ_WIFI_OFF,        // 10: falling arpeggio
-  BUZZ_TEST             // 11: 1s steady tone (web "Test buzzer" button)
+  BUZZ_TEST,            // 11: 1s steady tone (web "Test buzzer" button)
+  BUZZ_INACTIVITY_ALERT // 12: short high chirp — fires every 30s during inactivity alarm
 };
 
 void buzzerBegin();

@@ -6,7 +6,7 @@
 //   - Header: gear logo, name, S8PA/D8PA tag, BR/EN
 //   - Slot picker: 3 buttons at the top
 //   - 1) Tipo de disparo (S8PA/D8PA) — help texts: Jack/Backdraft vs F2/Pulsar
-//   - 2) Timings (DN/DR/DP/DL em ms; DN+DL somem em S8PA) + ROF teórico
+//   - 2) Timings (DN/DR/DP em ms, DB em 0,1 ms; DN+DB somem em S8PA) + ROF teórico
 //   - 3) Seletor (Pos1/Pos2; toggle 3-pos auto-ativa Hall e revela Pos3)
 //   - 4) Entrada (Sw/Hall do gatilho, inverter gatilho, swap MOS, silent)
 //   - 5) Sensibilidade (só Hall trigger): captura de ponto único
@@ -138,9 +138,9 @@ body.variant-str header{border-bottom-color:var(--accent)}
       <label>DP <button class="help" data-h="dp" type="button">?</button></label>
       <div class="ctrl"><div class="pair" style="width:100%"><input type="range" id="dpR" min="2" max="80" /><input type="number" id="dpN" min="2" max="80" /></div></div>
     </div>
-    <div class="row" id="rowDl">
-      <label>DL <button class="help" data-h="dl" type="button">?</button></label>
-      <div class="ctrl"><div class="pair" style="width:100%"><input type="range" id="dlR" min="2" max="80" /><input type="number" id="dlN" min="2" max="80" /></div></div>
+    <div class="row" id="rowDb">
+      <label>DB <button class="help" data-h="db" type="button">?</button></label>
+      <div class="ctrl"><div class="pair" style="width:100%"><input type="range" id="dbR" min="20" max="800" /><input type="number" id="dbN" min="20" max="800" /></div></div>
     </div>
     <div class="row">
       <label data-i="rofLbl">ROF máx (rps) <button class="help" data-h="rof" type="button">?</button></label>
@@ -329,7 +329,7 @@ const I = {
       dn:"Tempo (ms) que a SOL 2 (nozzle) fica acionada — recua o nozzle para alimentar a BB. Aumente se a arma estiver falhando alimentação. Padrão 18 ms.",
       dr:"Em D8PA: espera entre DN e DP, dá tempo da mola empurrar o bico e vedar o bucking. Em S8PA: descanso entre tiros. Padrão 26 ms (D8PA) / 20 ms (S8PA).",
       dp:"Tempo (ms) que a SOL 1 (poppet) fica aberta — quanto maior, mais ar passa pelo cano. Aumente para canos longos ou BBs pesadas. Padrão 25 ms.",
-      dl:"Delay (ms) após o disparo, aguardando a BB sair do cano antes do próximo tiro. Só D8PA. Padrão 10 ms.",
+      db:"Debounce do gatilho em unidades de 0,1 ms (1 unidade = 100 µs). Pausa antes do próximo ciclo, esperando a BB sair do cano. Só D8PA. Padrão 100 (= 10 ms).",
       rof:"Limite de cadência em tiros por segundo (rps). 0 = sem limite (cadência só pelos timings).",
       semiRof:"Tempo mínimo (ms) entre tiros em SEMI. Impede auto-disparo acidental com gatilhos rápidos. 0 = desativado.",
       rofTheo:"Cadência teórica em rps calculada a partir dos timings: 1000 ÷ (soma dos delays).",
@@ -382,7 +382,7 @@ const I = {
       dn:"Time (ms) SOL 2 (nozzle) is energized — pulls back the nozzle to feed a BB. Increase if feeding fails. Default 18 ms.",
       dr:"In D8PA: wait between DN and DP for the spring to seal the bucking. In S8PA: inter-shot rest. Default 26 ms (D8PA) / 20 ms (S8PA).",
       dp:"Time (ms) SOL 1 (poppet) stays open — longer = more air through the barrel. Increase for long barrels or heavy BBs. Default 25 ms.",
-      dl:"Delay (ms) after the shot, waiting for the BB to exit the barrel before the next shot. D8PA only. Default 10 ms.",
+      db:"Trigger debounce in units of 0.1 ms (1 unit = 100 µs). Pause before the next cycle, waiting for the BB to exit the barrel. D8PA only. Default 100 (= 10 ms).",
       rof:"Rate cap in rounds per second (rps). 0 = unlimited (cadence ruled by timings only).",
       semiRof:"Minimum time (ms) between SEMI shots. Blocks accidental double-taps from fast triggers. 0 = disabled.",
       rofTheo:"Theoretical cadence in rps from timings: 1000 ÷ (sum of delays).",
@@ -498,10 +498,11 @@ function updateHeader(){
 
 function recalcRofTheo(){
   if (!cur.slot) { $("rofTheoVal").textContent = "— rps"; return; }
-  const pair = (k)=> Math.max(2, Math.min(80, parseInt($(k+"N").value||"0",10)));
+  const ms = (k)=> Math.max(2, Math.min(80, parseInt($(k+"N").value||"0",10)));
+  const dbMs = ()=> Math.max(2, Math.min(80, (parseInt($("dbN").value||"0",10) || 0) / 10));
   const isS = cur.slot.solenoids === 1;
-  const sum = isS ? (pair("dp") + pair("dr"))
-                  : (pair("dn") + pair("dr") + pair("dp") + pair("dl"));
+  const sum = isS ? (ms("dp") + ms("dr"))
+                  : (ms("dn") + ms("dr") + ms("dp") + dbMs());
   if (!sum) { $("rofTheoVal").textContent = "— rps"; return; }
   const rps = 1000 / sum;
   $("rofTheoVal").textContent = rps.toFixed(1) + " rps";
@@ -556,7 +557,7 @@ function applySlotToUi(s){
   $("mosfetSwap").checked = !!s.mosfetSwap;
   $("invertTrig").checked = !!s.invertTrig;
   $("silent").checked     = !!s.silent;
-  for (const k of ["dn","dr","dp","dl"]){
+  for (const k of ["dn","dr","dp","db"]){
     $(k+"R").value = s[k]; $(k+"N").value = s[k];
   }
   $("rofN").value = s.rof;
@@ -583,6 +584,7 @@ async function loadSlot(i){
 
 function readSlotFromUi(){
   const pair = (k)=> Math.max(2, Math.min(80, parseInt($(k+"N").value||"0",10)));
+  const dbUnits = ()=> Math.max(20, Math.min(800, parseInt($("dbN").value||"0",10)));
   return {
     name: $("slotName").value || ("Slot "+(cur.i+1)),
     solenoids: $("solD").classList.contains("on") ? 2 : 1,
@@ -592,7 +594,7 @@ function readSlotFromUi(){
     selPos1:  parseInt($("selPos1").value,10),
     selPos2:  parseInt($("selPos2").value,10),
     selPos3:  parseInt($("selPos3").value,10),
-    dn: pair("dn"), dr: pair("dr"), dp: pair("dp"), dl: pair("dl"),
+    dn: pair("dn"), dr: pair("dr"), dp: pair("dp"), db: dbUnits(),
     rof:   Math.max(0, Math.min(50, parseInt($("rofN").value||"0",10))),
     semiRofMs: Math.max(0, Math.min(500, parseInt($("semiRofN").value||"0",10))),
     hallTrigLow:  cur.slot.hallTrigLow,
@@ -874,7 +876,7 @@ function trigTestStart(){
 
 // ===== wire-up =====
 window.addEventListener("DOMContentLoaded", async ()=>{
-  ["dn","dr","dp","dl"].forEach(bindPair);
+  ["dn","dr","dp","db"].forEach(bindPair);
 
   $("langBR").addEventListener("click", ()=>{ lang="br"; jpost("/setlang",{lang:"br"}); applyLang(); refreshSelectorUI(); });
   $("langEN").addEventListener("click", ()=>{ lang="en"; jpost("/setlang",{lang:"en"}); applyLang(); refreshSelectorUI(); });

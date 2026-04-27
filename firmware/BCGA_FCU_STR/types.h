@@ -52,7 +52,7 @@ enum Language : uint8_t {
 // SLOT CONFIG — persisted to NVS via putBytes/getBytes
 // ============================================================================
 // Bump SLOT_CONFIG_VERSION when the layout/semantics change; storage will wipe.
-#define SLOT_CONFIG_VERSION 6
+#define SLOT_CONFIG_VERSION 8
 
 struct __attribute__((packed)) SlotConfig {
   uint8_t  version;          // SLOT_CONFIG_VERSION
@@ -69,14 +69,15 @@ struct __attribute__((packed)) SlotConfig {
   uint8_t  selPos2Mode;
   uint8_t  selPos3Mode;
 
-  // Timing — milliseconds, clamped FIRE_MIN_MS..FIRE_MAX_MS
+  // Timing — DN/DR/DP in ms (clamped FIRE_MIN_MS..FIRE_MAX_MS).
+  // DB in units of 0.1 ms (clamped DB_MIN_UNITS..DB_MAX_UNITS); one unit = 100 µs.
   // Cycle order:
-  //   D8PA: pulse SOL2 (DN) → wait DR → pulse SOL1 (DP) → wait DL → repeat
-  //   S8PA: pulse SOL1 (DP) → wait DR → repeat (DN and DL unused)
-  uint16_t dn;               // Nozzle Dwell — SOL2 pulse (D8PA only)
-  uint16_t dr;               // D8PA: seal wait between DN and DP. S8PA: inter-shot rest.
-  uint16_t dp;               // Shot Poppet — SOL1 pulse (both modes)
-  uint16_t dl;               // Post-shot Delay — D8PA only (BB exits barrel)
+  //   D8PA: pulse SOL2 (DN) → wait DR → pulse SOL1 (DP) → wait DB → repeat
+  //   S8PA: pulse SOL1 (DP) → wait DR → repeat (DN and DB unused)
+  uint16_t dn;               // Nozzle Dwell — SOL2 pulse (D8PA only), ms
+  uint16_t dr;               // D8PA: seal wait between DN and DP. S8PA: inter-shot rest. ms
+  uint16_t dp;               // Shot Poppet — SOL1 pulse (both modes), ms
+  uint16_t db;               // Trigger Debounce — D8PA post-shot delay, units of 0.1 ms
 
   uint16_t rofLimit;         // rounds/sec cap, 0 = unlimited
   uint16_t semiRofMs;        // ms to ignore trigger after semi shot (0 = disabled)

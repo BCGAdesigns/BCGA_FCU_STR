@@ -41,7 +41,9 @@ const PatternData PATTERNS[] = {
   // BUZZ_WIFI_OFF
   { {{3200,60},{2700,60},{2200,60},{1800,90}}, 4 },
   // BUZZ_TEST
-  { {{2700,1000}}, 1 }
+  { {{2700,1000}}, 1 },
+  // BUZZ_INACTIVITY_ALERT — short high chirp ~100ms 3 kHz
+  { {{3000,100}}, 1 }
 };
 
 PatternData runtimeBuf;            // used for SLOT/PlayCount

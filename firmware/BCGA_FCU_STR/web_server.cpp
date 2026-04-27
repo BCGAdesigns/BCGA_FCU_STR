@@ -8,6 +8,7 @@
 #include "buzzer.h"
 #include "firing.h"
 #include "wifi_manager.h"
+#include "display.h"
 
 #include <WebServer.h>
 #include <ArduinoJson.h>
@@ -72,7 +73,7 @@ void slotToJson(const SlotConfig& c, JsonObject d) {
   d["dn"]          = c.dn;
   d["dr"]          = c.dr;
   d["dp"]          = c.dp;
-  d["dl"]          = c.dl;
+  d["db"]          = c.db;
   d["rof"]         = c.rofLimit;
   d["semiRofMs"]   = c.semiRofMs;
   d["hallTrigLow"] = c.hallTrigLow;
@@ -127,7 +128,7 @@ void handleSave() {
   if (body.containsKey("dn"))          c.dn  = clampU((uint16_t)body["dn"],  FIRE_MIN_MS, FIRE_MAX_MS);
   if (body.containsKey("dr"))          c.dr  = clampU((uint16_t)body["dr"],  FIRE_MIN_MS, FIRE_MAX_MS);
   if (body.containsKey("dp"))          c.dp  = clampU((uint16_t)body["dp"],  FIRE_MIN_MS, FIRE_MAX_MS);
-  if (body.containsKey("dl"))          c.dl  = clampU((uint16_t)body["dl"],  FIRE_MIN_MS, FIRE_MAX_MS);
+  if (body.containsKey("db"))          c.db  = clampU((uint16_t)body["db"],  DB_MIN_UNITS, DB_MAX_UNITS);
   if (body.containsKey("rof"))         c.rofLimit   = (uint16_t)constrain((int)body["rof"], 0, 50);
   if (body.containsKey("semiRofMs"))   c.semiRofMs  = (uint16_t)constrain((int)body["semiRofMs"], 0, 500);
   if (body.containsKey("hallTrigLow"))  c.hallTrigLow  = clampU((uint16_t)body["hallTrigLow"], 0, 4095);
@@ -141,6 +142,9 @@ void handleSave() {
   if (!storageSaveSlot(i, c)) { sendErr(500, "nvs write failed"); return; }
   if (body.containsKey("makeActive") && body["makeActive"]) {
     storageSetLastSlot(i);
+    displaySetSlot(i, c.solenoidCount);
+  } else if (i == storageGetLastSlot()) {
+    displaySetSlot(i, c.solenoidCount);
   }
   buzzerPlay(BUZZ_SAVE_OK);
 
@@ -229,6 +233,8 @@ void handleSetSlot() {
   uint8_t i = (uint8_t)server.arg("i").toInt();
   if (i >= SLOT_COUNT)     { sendErr(400, "out of range"); return; }
   storageSetLastSlot(i);
+  SlotConfig c; storageLoadSlot(i, c);
+  displaySetSlot(i, c.solenoidCount);
   StaticJsonDocument<64> r; r["ok"] = true; sendJson(200, r);
 }
 

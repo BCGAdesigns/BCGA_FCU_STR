@@ -1,10 +1,10 @@
 // BCGA FCU PRO — firing.h
 // Non-blocking firing engine. Drives SOL1 (poppet) and SOL2 (nozzle, D8PA).
-// Timings stored as MILLISECONDS in SlotConfig; converted internally.
+// DN/DR/DP stored as ms; DB stored as units of 0.1 ms. Converted internally.
 //
 // Cycle:
-//   D8PA (solenoidCount=2): SOL2 pulse DN → wait DR → SOL1 pulse DP → wait DL → repeat
-//   S8PA (solenoidCount=1): SOL1 pulse DP → wait DR → repeat (DN, DL unused)
+//   D8PA (solenoidCount=2): SOL2 pulse DN → wait DR → SOL1 pulse DP → wait DB → repeat
+//   S8PA (solenoidCount=1): SOL1 pulse DP → wait DR → repeat (DN, DB unused)
 //
 // Default pin mapping:
 //   SOL1 (poppet) = PIN_MOS_1

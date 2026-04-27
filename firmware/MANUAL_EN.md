@@ -23,7 +23,7 @@ This manual is practical: each section leads with **what to tweak to get what re
 11. [Useful flags (invert trigger, swap MOS, silent)](#11-useful-flags)
 12. [Limit rate of fire (ROF limit and Semi ROF)](#12-limit-rate-of-fire)
 13. [Diagnostics and WiFi](#13-diagnostics-and-wifi)
-14. [Deep sleep and debug mode](#14-deep-sleep-and-debug-mode)
+14. [Deep sleep, inactivity alarm and debug mode](#14-deep-sleep-inactivity-alarm-and-debug-mode)
 15. [STR vs PRO differences](#15-str-vs-pro-differences)
 16. [BCGA FCU vs commercial FCUs](#16-bcga-fcu-vs-commercial-fcus)
 
@@ -354,9 +354,35 @@ Two ways:
 
 ---
 
-## 14. Deep sleep and debug mode
+## 14. Deep sleep, inactivity alarm and debug mode
 
-After **60 min of trigger inactivity** the FCU enters deep-sleep (<10 µA draw). The next trigger pull **wakes the MCU via full reboot** — the second pull actually fires.
+### Inactivity alarm (NEW)
+
+After **60 minutes without any user activity** (trigger pull, WiFi button press, selector change, or web UI interaction), the FCU enters an alarm sequence designed to grab your attention before sleeping:
+
+- **6 alarm cycles**, each consisting of:
+  - 5 minutes of short beeps every 30 seconds
+  - Then 1 hour of deep sleep
+  - Then wake and start the next cycle
+- After all 6 cycles complete (~6 hours total), the FCU enters **permanent deep sleep**
+- **Any activity resets the counter** and returns to normal operation
+
+This protects against forgetting the FCU powered on, but **does not preserve the battery indefinitely** — see below.
+
+### Deep sleep behavior
+
+When the FCU enters deep sleep:
+- ESP32-C3 draws **<10 µA**
+- The voltage regulators on the PRO board (MP2315 buck, MT3608 boost, AMS1117 LDO) **continue drawing ~12-18 mA** as long as the battery is connected
+- Total board draw in deep sleep: ~12-18 mA (regulators only)
+
+A 1000 mAh battery will fully discharge in **2-3 days** if left connected, even if the ESP32 is sleeping.
+
+> ⚠️ **The only way to truly preserve the battery between sessions is to physically disconnect it.**
+
+### Wake-up
+
+After deep sleep, the next trigger pull **wakes the MCU via full reboot** — the second pull is the one that actually fires.
 
 ### Debug mode (5 min)
 
@@ -366,7 +392,24 @@ For bench testing, edit `firmware/BCGA_FCU_{STR,PRO}/config.h` and uncomment:
 #define DEEP_SLEEP_DEBUG
 ```
 
-Timeout drops from 60 min to 5 min. **Re-comment before shipping to production.**
+Inactivity timeout drops from 60 min to 5 min. **Re-comment before shipping to production.**
+
+### Battery lockout (PRO only)
+
+The PRO variant monitors battery voltage and protects against deep discharge through **lockout mode** (not automatic cut-off — see below).
+
+**Thresholds (per cell):**
+- **Low warning**: 3.5 V/cell — single beep every 10 seconds
+- **Critical**: 3.2 V/cell — single beep every 5 seconds
+- **Cut (lockout)**: 3.0 V/cell — firing blocked, beep every 5 seconds
+
+When lockout is triggered:
+1. Firing is permanently disabled until reboot (battery reconnect)
+2. Beep alert sounds every 5 seconds
+3. After ~30 minutes of beeping (360 cycles), FCU enters permanent deep sleep
+4. **Battery is not cut off** — you must physically disconnect to prevent further discharge
+
+> ⚠️ **The PRO variant V2.1 does NOT have automatic battery cut-off.** Earlier versions (V2.0 and earlier) had a kill latch circuit that physically disconnected the battery — this was removed in V2.1 to simplify the circuit and eliminate a bootstrap reliability issue. The lockout mode + audible alarm is the new protection mechanism, but it relies on the user disconnecting the battery.
 
 ---
 
@@ -381,8 +424,10 @@ Timeout drops from 60 min to 5 min. **Re-comment before shipping to production.*
 | Full Hall calibration | ✅ | ✅ |
 | Web panel + AP gesture opening | ✅ | ✅ |
 | 60 min deep sleep | ✅ | ✅ |
+| Inactivity alarm (6 cycles → permanent sleep) | ✅ | ✅ |
 | **Battery voltage read** | ❌ | ✅ |
-| **Kill latch** (LiPo deep-discharge protection) | ❌ | ✅ |
+| **Battery lockout** (firing block at critical V) | ❌ | ✅ |
+| **Kill latch** (LiPo deep-discharge protection) | ❌ | ❌ (V2.1: lockout) |
 | **Dedicated WiFi button** | ❌ | ✅ |
 | **Onboard buzzer** | ❌ | ✅ |
 
@@ -420,8 +465,9 @@ Buyers need to know these before choosing the BCGA FCU:
 
 1. **No binary trigger.** Not implemented. Available on Wolverine BLINC, GATE TITAN II and Gorilla FCU.
 2. **No tournament lock with password.** Workaround: set Semi ROF high and ROF limit low before an event. Available on TITAN II (Expert) and Gorilla.
-3. **Kill latch and onboard buzzer are PRO-only.** The STR variant has no battery voltage read and no LiPo deep-discharge cut-off. Use with caution on 2S/3S packs without external protection.
-4. **First pull after deep sleep wakes via reboot.** After 60 min of idle the FCU deep-sleeps. The next pull wakes the MCU through a full reboot — the **second** pull is the one that actually fires. Different from FCUs that sleep via MOSFET gate-hold.
+3. **No automatic battery cut-off.** The PRO variant enters lockout mode (firing disabled, continuous alarm) at critical battery voltage, but does not physically cut the battery — user must disconnect manually. The STR variant has no battery voltage read at all. Use with caution on 2S/3S packs without external protection.
+4. **Battery drains while plugged in.** The voltage regulators draw ~12-18mA continuously. A 1000mAh pack discharges fully in 2-3 days if left connected. Disconnect between sessions.
+5. **First pull after deep sleep wakes via reboot.** After 60 min of idle the FCU deep-sleeps. The next pull wakes the MCU through a full reboot — the **second** pull is the one that actually fires. Different from FCUs that sleep via MOSFET gate-hold.
 
 ### 16.3 Side-by-side comparison
 
@@ -439,7 +485,8 @@ Buyers need to know these before choosing the BCGA FCU:
 | Binary trigger | ❌ | Hack (burst=01) | ✅ | ✅ | ✅ |
 | Tournament lock | ❌ | — | ❌ | ✅ (Expert) | ✅ |
 | Approximate cost | **~R$50–100 BOM** | ~US$80 FCU | ~US$160 | ~US$300–440 combo | ~US$200 |
-| Deep sleep | ✅ 60 min | — | ✅ | ✅ | — |
+| Deep sleep | ✅ 60 min + alarm | — | ✅ | ✅ | — |
+| Battery cut-off | ❌ (PRO: lockout) | — | — | — | — |
 
 ### 16.4 Who the BCGA FCU is for
 

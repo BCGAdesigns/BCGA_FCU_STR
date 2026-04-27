@@ -56,7 +56,8 @@ Compared to commercial FCUs (PolarStar REV3, Wolverine BLINC, GATE TITAN II, Gor
 
 - **No binary trigger.** Not implemented. Available on Wolverine BLINC, GATE TITAN II and Gorilla FCU.
 - **No tournament lock with password.** Workaround: set Semi ROF high and ROF limit low before an event. Available on TITAN II (Expert) and Gorilla.
-- **Kill latch and onboard buzzer are PRO-only.** The STR variant has no battery voltage read and no LiPo deep-discharge cut-off — use with caution on 2S/3S packs without external protection.
+- **No automatic battery cut-off.** The firmware enters lockout mode (firing disabled, continuous beep) when the battery reaches critical level on the PRO variant, but you must physically disconnect the battery to preserve charge. The STR variant has no battery voltage read at all — use with caution on 2S/3S packs without external protection.
+- **Battery drains while plugged.** The voltage regulators on the PRO board draw ~12-18mA continuously even when the ESP32 is sleeping. A 1000mAh pack will be fully discharged in 2-3 days if left connected. Always disconnect the battery between sessions.
 - **First pull after deep sleep wakes via reboot.** After 60 min of idle, the next pull wakes the MCU through a full reboot — the **second** pull actually fires.
 
 ---
@@ -72,7 +73,9 @@ Compared to commercial FCUs (PolarStar REV3, Wolverine BLINC, GATE TITAN II, Gor
 | Engine types | S8PA (1 solenoid) / D8PA (2 solenoids) |
 | Fire modes | SAFE / SEMI / FULL / BURST 2 / BURST 3 / BURST 4 |
 | Configuration | Web UI over WiFi AP (192.168.4.1) |
-| Deep sleep | 60 min idle → <10 µA |
+| Deep sleep | 60 min idle → ESP32 <10 µA, total board ~12-18 mA (regulators) |
+| Inactivity alarm | 60 min idle → 6 cycles of 5min beep + 1h sleep, then permanent sleep |
+| Battery management (PRO) | Lockout mode at critical voltage (no auto cut-off — physical disconnect required) |
 | License | GPL v3 |
 
 ---

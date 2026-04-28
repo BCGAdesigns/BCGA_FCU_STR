@@ -71,10 +71,12 @@
 // ============================================================================
 // BATTERY
 // ============================================================================
-// Voltage divider: VBAT --[R16=33k]--+--[R17=10k]-- GND, tap at PIN_VBAT
-// Vadc = Vbat * R17/(R16+R17) = Vbat * 10/43
+// Voltage divider (V2.1): VBAT --[R16=47k]--+--[R17=10k]-- GND, tap at PIN_VBAT.
+// Zener clamp D4 (BZT52C3V3S) was removed in V2.1 — the larger top resistor
+// keeps Vadc safely under 3.3 V across all 2S/3S operating ranges.
+// Vadc = Vbat * R17/(R16+R17) = Vbat * 10/57
 #define VBAT_DIV_NUM   10
-#define VBAT_DIV_DEN   43
+#define VBAT_DIV_DEN   57
 #define ADC_REF_MV    3300
 #define ADC_RESOLUTION 4095   // 12-bit
 // Thresholds (mV per cell)

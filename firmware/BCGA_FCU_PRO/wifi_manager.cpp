@@ -83,13 +83,14 @@ void wifiManagerUpdate() {
     noteUserActivity();   // count any button press as activity
   }
 
-  // While held: start continuous buzzer feedback after 3s
+  // While held: start continuous buzzer feedback after 3s. Active buzzer
+  // (V2.1) — frequency is fixed by the part's internal oscillator, so
+  // continuous tone is just the GPIO held HIGH.
   if (btnNow == LOW && btnDownMs != 0) {
     uint32_t held = (uint32_t)(millis() - btnDownMs);
     if (held >= 3000 && !continuousOn) {
       continuousOn = true;
-      ledcWriteTone(PIN_BUZZER, 2700);
-      ledcWrite(PIN_BUZZER, 128);
+      digitalWrite(PIN_BUZZER, HIGH);
     }
   }
 
@@ -99,7 +100,7 @@ void wifiManagerUpdate() {
     btnDownMs = 0;
 
     if (continuousOn) {
-      ledcWrite(PIN_BUZZER, 0);
+      digitalWrite(PIN_BUZZER, LOW);
       continuousOn = false;
     }
 

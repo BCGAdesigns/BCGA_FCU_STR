@@ -28,7 +28,7 @@ O projeto é desenhado, fabricado e mantido pela **[BCGA Airsoft](https://bcgaai
 
 ## Por que BCGA FCU?
 
-Comparada com FCUs comerciais (PolarStar REV3, Wolverine BLINC, GATE TITAN II, Gorilla FCU), a BCGA FCU tem vantagens concretas — e algumas limitações honestas. Esta seção é factual; o comparativo lado-a-lado completo está em [`firmware/MANUAL_PT.md`](firmware/MANUAL_PT.md) seção 16.
+Comparada com FCUs comerciais (PolarStar REV3, Wolverine BLINC, GATE TITAN II, Gorilla FCU), a BCGA FCU tem vantagens concretas — e algumas limitações honestas. Esta seção é factual; o comparativo lado-a-lado completo está em [`MANUAL_PT.md`](MANUAL_PT.md) seção 16.
 
 ### Onde a BCGA FCU ganha
 
@@ -89,9 +89,9 @@ BCGA_FCU_STR/
 ├── Gearbox_DaughterBoard/    # Daughterboard B — V2 standard (conversão AEG)
 ├── firmware/
 │   ├── BCGA_FCU_STR/         # Sketch Arduino — variante Starter
-│   ├── BCGA_FCU_PRO/         # Sketch Arduino — variante Pro
-│   ├── MANUAL_EN.md / .pdf   # Manual em inglês
-│   └── MANUAL_PT.md / .pdf   # Manual em português (este LEIA-ME aponta pra cá)
+│   └── BCGA_FCU_PRO/         # Sketch Arduino — variante Pro
+├── MANUAL_EN.md / .pdf       # Manual em inglês
+├── MANUAL_PT.md / .pdf       # Manual em português (este LEIA-ME aponta pra cá)
 ├── README.md                 # Readme em inglês
 ├── LEIA-ME.md                # Readme em português (este arquivo)
 └── LICENSE                   # GPL v3
@@ -109,7 +109,7 @@ Cada pasta de placa contém: `BOM` (xlsx), `CPL` (xlsx), `GERBER` (zip), `SCH` (
    - SSID padrão: `BCGA_FCU_STR` ou `BCGA_FCU_PRO`
    - Senha padrão: `12345678`
 4. Conecte o celular/notebook ao AP. Uma página captive abre em `http://192.168.4.1`.
-5. Configure os 3 slots: tipo de engine (S8PA/D8PA), timings (DN/DR/DP/DB), seletor, flags. O workflow completo de tuning está em [`firmware/MANUAL_PT.md`](firmware/MANUAL_PT.md).
+5. Configure os 3 slots: tipo de engine (S8PA/D8PA), timings (DN/DR/DP/DB), seletor, flags. O workflow completo de tuning está em [`MANUAL_PT.md`](MANUAL_PT.md).
 
 Para reabrir o AP depois:
 - **STR** — segure o gatilho por 5 s durante os primeiros 5 s após o boot; OU dê 5 puxadas no gatilho em SAFE dentro de 3 s.
@@ -141,8 +141,8 @@ O AP desliga automaticamente após 10 min sem atividade web.
 
 - **Páginas do produto:** [bcgaairsoft.com/fcu/str](https://bcgaairsoft.com/fcu/str) · [bcgaairsoft.com/fcu/pro](https://bcgaairsoft.com/fcu/pro)
 - **Site principal:** [bcgaairsoft.com](https://bcgaairsoft.com)
-- **Manual do usuário (português):** [firmware/MANUAL_PT.md](firmware/MANUAL_PT.md) · [PDF](firmware/MANUAL_PT.pdf)
-- **Manual do usuário (inglês):** [firmware/MANUAL_EN.md](firmware/MANUAL_EN.md) · [PDF](firmware/MANUAL_EN.pdf)
+- **Manual do usuário (português):** [MANUAL_PT.md](MANUAL_PT.md) · [PDF](MANUAL_PT.pdf)
+- **Manual do usuário (inglês):** [MANUAL_EN.md](MANUAL_EN.md) · [PDF](MANUAL_EN.pdf)
 - **Issues e suporte:** [GitHub Issues](https://github.com/BCGAdesigns/BCGA_FCU_STR/issues)
 
 ---

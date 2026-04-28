@@ -502,4 +502,4 @@ A BCGA FCU **não** é a escolha certa se você precisa de binary trigger ou tou
 
 ## Licença
 
-GPL v3 — ver [LICENSE](../LICENSE).
+GPL v3 — ver [LICENSE](LICENSE).

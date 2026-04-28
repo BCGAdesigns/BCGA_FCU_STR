@@ -42,13 +42,6 @@
 // GPIO 21    — free on V2.1 (was PIN_LATCH on V2.0; latch circuit removed)
 
 // ============================================================================
-// LEDC (PWM) CHANNELS
-// ============================================================================
-#define LEDC_BUZZER_CH    0
-#define LEDC_BUZZER_RES   8     // 8-bit duty
-#define LEDC_BUZZER_DEFAULT_FREQ 2700
-
-// ============================================================================
 // FIRING TIMING
 // ============================================================================
 // DN/DR/DP are in milliseconds, clamped FIRE_MIN_MS..FIRE_MAX_MS.

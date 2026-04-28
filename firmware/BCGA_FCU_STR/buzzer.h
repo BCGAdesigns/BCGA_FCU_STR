@@ -1,5 +1,7 @@
-// BCGA FCU V2 — buzzer.h
-// Non-blocking pattern player on PIN_BUZZER (LEDC PWM).
+// BCGA FCU STR — buzzer.h
+// Non-blocking pattern player on PIN_BUZZER. V2.1 hardware uses an active
+// magnetic buzzer (FUET-9650B-3V, 3 kHz oscillator built in) — the GPIO is
+// driven on/off with digitalWrite; patterns are count/duration based.
 
 #pragma once
 
@@ -7,18 +9,18 @@
 
 enum BuzzPattern : uint8_t {
   BUZZ_NONE = 0,
-  BUZZ_BOOT,            // 1: short rising chirp at startup
-  BUZZ_READY,           // 2: short single beep — ready
-  BUZZ_SLOT,            // 3: N chirps == active slot number
-  BUZZ_MODE_CHANGE,     // 4: 2 quick beeps
-  BUZZ_SAVE_OK,         // 5: short ascending pair
-  BUZZ_ERROR,           // 6: long low buzz
-  BUZZ_LOW_BATT,        // 7: triple descending warning
-  BUZZ_BATT_CUT,        // 8: long sad tone before kill
-  BUZZ_WIFI_ON,         // 9: rising arpeggio
-  BUZZ_WIFI_OFF,        // 10: falling arpeggio
-  BUZZ_TEST,            // 11: 1s steady tone (web "Test buzzer" button)
-  BUZZ_INACTIVITY_ALERT // 12: short high chirp — fires every 30s during inactivity alarm
+  BUZZ_BOOT,            // 1: 1 short beep at startup
+  BUZZ_READY,           // 2: 1 long beep — ready (first-boot only)
+  BUZZ_SLOT,            // 3: N beeps == active slot number
+  BUZZ_MODE_CHANGE,     // 4: 1 short click
+  BUZZ_SAVE_OK,         // 5: tick-tock pair
+  BUZZ_ERROR,           // 6: 1 sustained beep
+  BUZZ_LOW_BATT,        // 7: 3 evenly-spaced beeps
+  BUZZ_BATT_CUT,        // 8: 3 long beeps + terminal long beep
+  BUZZ_WIFI_ON,         // 9: 4 short beeps
+  BUZZ_WIFI_OFF,        // 10: short + long descending pair
+  BUZZ_TEST,            // 11: 1 s steady tone (web "Test buzzer" button)
+  BUZZ_INACTIVITY_ALERT // 12: 1 short beep — fires every 30 s during inactivity alarm
 };
 
 void buzzerBegin();

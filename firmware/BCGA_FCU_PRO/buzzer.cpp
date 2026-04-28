@@ -1,4 +1,7 @@
-// BCGA FCU V2 — buzzer.cpp
+// BCGA FCU PRO — buzzer.cpp
+// Active magnetic buzzer (FUET-9650B-3V): the oscillator is built into the
+// part, so the GPIO just toggles it on/off via digitalWrite. Patterns are
+// distinguished by beep count and duration — frequency is fixed (~3 kHz).
 
 #include "buzzer.h"
 #include "config.h"
@@ -6,8 +9,8 @@
 namespace {
 
 struct Step {
-  uint16_t freqHz;     // 0 = silence
-  uint16_t durMs;
+  bool     on;          // true = buzzer on, false = silence
+  uint16_t durMs;       // step duration
 };
 
 constexpr uint8_t MAX_STEPS = 12;
@@ -19,31 +22,31 @@ struct PatternData {
 
 const PatternData PATTERNS[] = {
   // BUZZ_NONE
-  { {{0,0}}, 0 },
-  // BUZZ_BOOT
-  { {{1500,40},{2000,40},{2700,80}}, 3 },
-  // BUZZ_READY
-  { {{2700,80}}, 1 },
-  // BUZZ_SLOT — overridden by buzzerPlayCount()
-  { {{2700,60},{0,80}}, 2 },
-  // BUZZ_MODE_CHANGE
-  { {{2400,40},{0,40},{2400,40}}, 3 },
-  // BUZZ_SAVE_OK
-  { {{2200,60},{2700,90}}, 2 },
-  // BUZZ_ERROR
-  { {{600,300}}, 1 },
-  // BUZZ_LOW_BATT
-  { {{2200,80},{0,80},{1900,80},{0,80},{1600,120}}, 5 },
-  // BUZZ_BATT_CUT
-  { {{1200,250},{900,250},{600,400}}, 3 },
-  // BUZZ_WIFI_ON
-  { {{1800,60},{2200,60},{2700,60},{3200,90}}, 4 },
-  // BUZZ_WIFI_OFF
-  { {{3200,60},{2700,60},{2200,60},{1800,90}}, 4 },
-  // BUZZ_TEST
-  { {{2700,1000}}, 1 },
-  // BUZZ_INACTIVITY_ALERT — short high chirp ~100ms 3 kHz
-  { {{3000,100}}, 1 }
+  { {{false, 0}}, 0 },
+  // BUZZ_BOOT — 1 short beep
+  { {{true, 80}}, 1 },
+  // BUZZ_READY — 1 long beep
+  { {{true, 200}}, 1 },
+  // BUZZ_SLOT — overridden at runtime by buzzerPlayCount()
+  { {{true, 70}, {false, 90}}, 2 },
+  // BUZZ_MODE_CHANGE — 1 short click
+  { {{true, 40}}, 1 },
+  // BUZZ_SAVE_OK — short + long pair (tick-tock)
+  { {{true, 60}, {false, 80}, {true, 100}}, 3 },
+  // BUZZ_ERROR — 1 sustained beep
+  { {{true, 500}}, 1 },
+  // BUZZ_LOW_BATT — 3 evenly-spaced beeps
+  { {{true, 80}, {false, 80}, {true, 80}, {false, 80}, {true, 80}}, 5 },
+  // BUZZ_BATT_CUT — 3 long beeps + 1 longer terminal beep (alarm-y)
+  { {{true, 250}, {false, 150}, {true, 250}, {false, 150}, {true, 250}, {false, 150}, {true, 400}}, 7 },
+  // BUZZ_WIFI_ON — 4 short beeps with a slightly longer last one
+  { {{true, 60}, {false, 60}, {true, 60}, {false, 60}, {true, 60}, {false, 60}, {true, 90}}, 7 },
+  // BUZZ_WIFI_OFF — short + long descending feel (slower than WIFI_ON)
+  { {{true, 100}, {false, 100}, {true, 200}}, 3 },
+  // BUZZ_TEST — 1 s steady tone (web "Test buzzer" button)
+  { {{true, 1000}}, 1 },
+  // BUZZ_INACTIVITY_ALERT — 1 short beep, fires every 30 s during alarm
+  { {{true, 100}}, 1 }
 };
 
 PatternData runtimeBuf;            // used for SLOT/PlayCount
@@ -55,29 +58,22 @@ bool     toneOn = false;
 void startStep(uint8_t idx) {
   if (!current || idx >= current->len) {
     current = nullptr;
-    ledcWrite(PIN_BUZZER, 0);
+    digitalWrite(PIN_BUZZER, LOW);
     toneOn = false;
     return;
   }
   curIdx = idx;
-  uint16_t f = current->steps[idx].freqHz;
-  if (f == 0) {
-    ledcWrite(PIN_BUZZER, 0);
-    toneOn = false;
-  } else {
-    ledcWriteTone(PIN_BUZZER, f);
-    ledcWrite(PIN_BUZZER, 128);   // 50% duty
-    toneOn = true;
-  }
+  bool on = current->steps[idx].on;
+  digitalWrite(PIN_BUZZER, on ? HIGH : LOW);
+  toneOn = on;
   stepEndMs = millis() + current->steps[idx].durMs;
 }
 
 }  // namespace
 
 void buzzerBegin() {
-  // ESP32 Arduino Core 3.x: pin-based LEDC API
-  ledcAttach(PIN_BUZZER, LEDC_BUZZER_DEFAULT_FREQ, LEDC_BUZZER_RES);
-  ledcWrite(PIN_BUZZER, 0);
+  pinMode(PIN_BUZZER, OUTPUT);
+  digitalWrite(PIN_BUZZER, LOW);
   current = nullptr;
   toneOn = false;
 }
@@ -96,8 +92,8 @@ void buzzerPlayCount(uint8_t n) {
   if (n > 5) n = 5;
   runtimeBuf.len = 0;
   for (uint8_t i = 0; i < n && (runtimeBuf.len + 2) <= MAX_STEPS; i++) {
-    runtimeBuf.steps[runtimeBuf.len++] = {2700, 70};
-    runtimeBuf.steps[runtimeBuf.len++] = {0, 90};
+    runtimeBuf.steps[runtimeBuf.len++] = {true, 70};
+    runtimeBuf.steps[runtimeBuf.len++] = {false, 90};
   }
   current = &runtimeBuf;
   startStep(0);
@@ -105,7 +101,7 @@ void buzzerPlayCount(uint8_t n) {
 
 void buzzerStop() {
   current = nullptr;
-  ledcWrite(PIN_BUZZER, 0);
+  digitalWrite(PIN_BUZZER, LOW);
   toneOn = false;
 }
 

@@ -28,7 +28,7 @@ This project is designed, manufactured and maintained by **[BCGA Airsoft](https:
 
 ## Why BCGA FCU?
 
-Compared to commercial FCUs (PolarStar REV3, Wolverine BLINC, GATE TITAN II, Gorilla FCU), the BCGA FCU has concrete advantages — and a few honest limitations. This section is factual; the full side-by-side tables are in [`firmware/MANUAL_EN.md`](firmware/MANUAL_EN.md) section 16.
+Compared to commercial FCUs (PolarStar REV3, Wolverine BLINC, GATE TITAN II, Gorilla FCU), the BCGA FCU has concrete advantages — and a few honest limitations. This section is factual; the full side-by-side tables are in [`MANUAL_EN.md`](MANUAL_EN.md) section 16.
 
 ### Where the BCGA FCU wins
 
@@ -89,9 +89,9 @@ BCGA_FCU_STR/
 ├── Gearbox_DaughterBoard/    # Daughterboard B — V2 standard (AEG conversion)
 ├── firmware/
 │   ├── BCGA_FCU_STR/         # Arduino sketch — Starter variant
-│   ├── BCGA_FCU_PRO/         # Arduino sketch — Pro variant
-│   ├── MANUAL_EN.md / .pdf   # English manual (this README links here)
-│   └── MANUAL_PT.md / .pdf   # Portuguese manual
+│   └── BCGA_FCU_PRO/         # Arduino sketch — Pro variant
+├── MANUAL_EN.md / .pdf       # English manual (this README links here)
+├── MANUAL_PT.md / .pdf       # Portuguese manual
 ├── README.md                 # English readme (this file)
 ├── LEIA-ME.md                # Portuguese readme
 └── LICENSE                   # GPL v3
@@ -109,7 +109,7 @@ Each board folder contains: `BOM` (xlsx), `CPL` (xlsx), `GERBER` (zip), `SCH` (p
    - Default SSID: `BCGA_FCU_STR` or `BCGA_FCU_PRO`
    - Default password: `12345678`
 4. Connect your phone/laptop to the AP. A captive page opens at `http://192.168.4.1`.
-5. Configure the 3 slots: engine type (S8PA/D8PA), timings (DN/DR/DP/DB), selector, flags. The full tuning workflow is in [`firmware/MANUAL_EN.md`](firmware/MANUAL_EN.md).
+5. Configure the 3 slots: engine type (S8PA/D8PA), timings (DN/DR/DP/DB), selector, flags. The full tuning workflow is in [`MANUAL_EN.md`](MANUAL_EN.md).
 
 To re-open the AP later:
 - **STR** — hold the trigger for 5 s during the first 5 s after boot; OR pull the trigger 5 times in SAFE within 3 s.
@@ -141,8 +141,8 @@ The AP shuts off automatically after 10 min of web inactivity.
 
 - **Product pages:** [bcgaairsoft.com/fcu/str](https://bcgaairsoft.com/fcu/str) · [bcgaairsoft.com/fcu/pro](https://bcgaairsoft.com/fcu/pro)
 - **Main site:** [bcgaairsoft.com](https://bcgaairsoft.com)
-- **User manual (English):** [firmware/MANUAL_EN.md](firmware/MANUAL_EN.md) · [PDF](firmware/MANUAL_EN.pdf)
-- **User manual (Portuguese):** [firmware/MANUAL_PT.md](firmware/MANUAL_PT.md) · [PDF](firmware/MANUAL_PT.pdf)
+- **User manual (English):** [MANUAL_EN.md](MANUAL_EN.md) · [PDF](MANUAL_EN.pdf)
+- **User manual (Portuguese):** [MANUAL_PT.md](MANUAL_PT.md) · [PDF](MANUAL_PT.pdf)
 - **Issues and support:** [GitHub Issues](https://github.com/BCGAdesigns/BCGA_FCU_STR/issues)
 
 ---

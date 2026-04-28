@@ -2,7 +2,7 @@ import re
 from pathlib import Path
 from markdown_pdf import MarkdownPdf, Section
 
-ROOT = Path(__file__).parent / "firmware"
+ROOT = Path(__file__).parent
 
 CSS = """
 body { font-family: 'Segoe UI', Arial, sans-serif; color: #222; line-height: 1.5; }

@@ -502,4 +502,4 @@ The BCGA FCU is **not** the right choice if you need binary trigger or password-
 
 ## License
 
-GPL v3 — see [LICENSE](../LICENSE).
+GPL v3 — see [LICENSE](LICENSE).

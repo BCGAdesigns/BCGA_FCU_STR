@@ -27,6 +27,11 @@ uint32_t   shotsTotal     = 0;
 // Tracks the cycle end of the most recent SEMI shot for semiRofMs blocking.
 uint32_t   lastSemiShotEndMs = 0;
 bool       lastCycleWasSemi  = false;
+// Anti-stiction: millis-resolution clock so IS works for idle ≫ 1 hour without
+// uint32 µs wraparound. pendingDpUs carries the (possibly boosted) DP duration
+// from startShot through the D8PA RETURN_WAIT → POPPET_PULSE transition.
+uint32_t   lastShotMs     = 0;
+uint32_t   pendingDpUs    = 0;
 
 // MOSFET test scheduler (web diagnostic) — non-blocking, active-HIGH only.
 uint8_t    mosTestPin       = 0;
@@ -60,18 +65,35 @@ void startShot(const SlotConfig& cfg) {
   uint32_t now = micros();
   if (minIntervalUs && (uint32_t)(now - lastShotEndUs) < minIntervalUs) return;
 
+  // Anti-stiction boost: if the gun's been idle for at least cfg.is seconds and
+  // ip > 0, multiply this shot's DP by (1 + ip) — each ip step adds one full
+  // DP-pulse worth of dwell to break the o-ring stiction.
+  // First shot after power-on: lastShotMs is 0 so idleMs equals current uptime,
+  // which qualifies for the boost as soon as the gun has been on for IS seconds —
+  // intentional, since cold start is the most stiction-prone moment.
+  uint32_t dpUs = msToUs(cfg.dp);
+  if (cfg.ip > 0) {
+    uint32_t idleMs = (uint32_t)(millis() - lastShotMs);
+    if (idleMs >= (uint32_t)cfg.is * 1000UL) {
+      dpUs += (uint32_t)cfg.ip * msToUs(cfg.dp);
+    }
+  }
+  pendingDpUs = dpUs;
+
   if (cfg.solenoidCount == 2) {
-    // D8PA: pulse nozzle (SOL2) first
+    // D8PA: pulse nozzle (SOL2) first; pendingDpUs is consumed when the
+    // RETURN_WAIT state transitions into POPPET_PULSE.
     writeMos(pinNozzle(cfg), true);
     state      = FS_NOZZLE_PULSE;
     stateEndUs = now + msToUs(cfg.dn);
   } else {
-    // S8PA: only the poppet (SOL1) is wired
+    // S8PA: only the poppet (SOL1) is wired — apply the boost immediately.
     writeMos(pinPoppet(cfg), true);
     state      = FS_POPPET_PULSE;
-    stateEndUs = now + msToUs(cfg.dp);
+    stateEndUs = now + dpUs;
   }
   lastShotEndUs = now;
+  lastShotMs    = millis();
   shotsTotal++;
 }
 
@@ -139,7 +161,7 @@ void firingUpdate(const SlotConfig& cfg, FireMode mode) {
       if ((int32_t)(now - stateEndUs) < 0) return;
       writeMos(pinPoppet(cfg), true);
       state      = FS_POPPET_PULSE;
-      stateEndUs = now + msToUs(cfg.dp);
+      stateEndUs = now + pendingDpUs;
       break;
     }
 

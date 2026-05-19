@@ -12,7 +12,7 @@
 // FIRMWARE METADATA
 // ============================================================================
 #define FW_NAME         "BCGA FCU PRO"
-#define FW_VERSION      "2.1.0"
+#define FW_VERSION      "2.1.1"
 #define FW_VARIANT      "Pro"
 #define FW_VARIANT_FULL "BCGA_FCU_PRO"
 
@@ -51,17 +51,27 @@
 //   S8PA: pulse SOL1 (DP) → wait DR → repeat
 #define FIRE_MIN_MS         2   // 2 ms minimum pulse for DN/DR/DP
 #define FIRE_MAX_MS        80   // 80 ms maximum pulse for DN/DR/DP
-#define DB_MIN_UNITS       20   //  2.0 ms minimum DB (1 unit = 0.1 ms)
-#define DB_MAX_UNITS      800   // 80.0 ms maximum DB
+#define DB_MIN_UNITS        5   //  0.5 ms minimum DB (1 unit = 0.1 ms)
+#define DB_MAX_UNITS      150   // 15.0 ms maximum DB
 
-// Defaults if NVS empty
-#define DEFAULT_DN_MS      18   // Nozzle Dwell — SOL2 pulse (D8PA only)
-#define DEFAULT_DR_MS      26   // D8PA: seal wait. S8PA: inter-shot rest (~20).
-#define DEFAULT_DP_MS      80   // Shot Poppet — SOL1 pulse (first-boot starts at max; tune down on chrono)
-#define DEFAULT_DB_UNITS  100   // Trigger Debounce — D8PA only (100 × 0.1 ms = 10 ms)
+// Defaults if NVS empty — values validated on the bench.
+#define DEFAULT_DN_MS      24   // Nozzle Dwell — SOL2 pulse (D8PA only)
+#define DEFAULT_DR_MS      24   // D8PA: seal wait. S8PA: inter-shot rest.
+#define DEFAULT_DP_MS      24   // Shot Poppet — SOL1 pulse
+#define DEFAULT_DB_UNITS    5   // Trigger Debounce — D8PA only (5 × 0.1 ms = 0.5 ms)
 #define DEFAULT_ROF_LIMIT   0   // 0 = unlimited
 #define DEFAULT_SOLENOIDS   2   // 1 = S8PA, 2 = D8PA
 #define DEFAULT_SEMI_ROF_MS 0   // 0 = disabled; ms to ignore trigger after semi shot
+
+// Anti-stiction. Idle ≥ IS seconds → next shot's SOL1 pulse is multiplied by
+// (1 + IP) so each IP step adds one full DP-pulse worth of boost. Capped at 5
+// because DP×6 already saturates FIRE_MAX_MS at any reasonable DP.
+#define IS_MIN_SEC          0
+#define IS_MAX_SEC        600   // 10 minutes
+#define IS_DEFAULT_SEC     30   // bench-validated
+#define IP_MIN_UNITS        0
+#define IP_MAX_UNITS        5
+#define IP_DEFAULT_UNITS    1   // first post-idle shot fires with DP × 2
 
 // ============================================================================
 // SLOTS

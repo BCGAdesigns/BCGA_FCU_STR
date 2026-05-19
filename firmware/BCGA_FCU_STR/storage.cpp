@@ -9,7 +9,7 @@ Preferences prefs;
 const char* NS = "bcgafcu";
 // Bump when defaults or schema change. Mismatch on boot → wipe namespace and
 // reinit, so users get the new defaults without manual factory-reset.
-const uint8_t STORAGE_INIT_VERSION = 8;
+const uint8_t STORAGE_INIT_VERSION = 9;
 bool firstBootFlag = false;
 }
 
@@ -28,7 +28,7 @@ void storageBegin() {
       storageDefaultSlot(i, c);
       storageSaveSlot(i, c);
     }
-    prefs.putUChar("lang", LANG_BR);
+    prefs.putUChar("lang", LANG_EN);
     prefs.putUChar("lastSlot", 0);
     prefs.putString("wifiPwd", WIFI_PASS_DEFAULT);
     prefs.putULong("shots", 0);
@@ -55,6 +55,8 @@ void storageDefaultSlot(uint8_t idx, SlotConfig& out) {
   out.db            = DEFAULT_DB_UNITS;
   out.rofLimit      = DEFAULT_ROF_LIMIT;
   out.semiRofMs     = DEFAULT_SEMI_ROF_MS;   // 0 = disabled
+  out.is            = IS_DEFAULT_SEC;
+  out.ip            = IP_DEFAULT_UNITS;
   out.hallTrigLow   = 1500;
   out.hallTrigHigh  = 2500;
   out.hallSelLow1   = 1365;                // ~1/3 for 3-pos default; midpoint when 2-pos
@@ -96,8 +98,8 @@ void storageSetLastSlot(uint8_t idx) {
 }
 
 Language storageGetLang() {
-  uint8_t v = prefs.getUChar("lang", LANG_BR);
-  return v == LANG_EN ? LANG_EN : LANG_BR;
+  uint8_t v = prefs.getUChar("lang", LANG_EN);
+  return v == LANG_BR ? LANG_BR : LANG_EN;
 }
 
 void storageSetLang(Language l) { prefs.putUChar("lang", (uint8_t)l); }
@@ -120,6 +122,32 @@ void storageBumpShots(uint32_t delta) {
   if (!delta) return;
   uint32_t cur = prefs.getULong("shots", 0);
   prefs.putULong("shots", cur + delta);
+}
+
+bool storageHasCfgPwd() {
+  String s = prefs.getString("cfgPwd", "");
+  return s.length() > 0;
+}
+
+void storageGetCfgPwd(char* out, size_t outLen) {
+  String s = prefs.getString("cfgPwd", "");
+  strncpy(out, s.c_str(), outLen - 1);
+  out[outLen - 1] = '\0';
+}
+
+bool storageSetCfgPwd(const char* pwd) {
+  if (!pwd) return false;
+  prefs.putString("cfgPwd", pwd);
+  if (pwd[0] == '\0') prefs.putUChar("cfgLock", 0);  // clearing pwd also unlocks
+  return true;
+}
+
+bool storageGetCfgLocked() {
+  return prefs.getUChar("cfgLock", 0) != 0;
+}
+
+void storageSetCfgLocked(bool locked) {
+  prefs.putUChar("cfgLock", locked ? 1 : 0);
 }
 
 void storageFactoryReset() {

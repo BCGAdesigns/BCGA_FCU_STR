@@ -24,4 +24,13 @@ bool          storageSetWifiPass(const char* pwd);    // false if too short
 uint32_t      storageGetTotalShots();
 void          storageBumpShots(uint32_t delta);
 
+// Config LOCK — single device-wide password that gates slot save/switch/reset.
+// Empty password = lock disabled. cfgLocked is the persisted boot state; the
+// runtime "session" unlock is held by web_server.cpp.
+bool          storageHasCfgPwd();
+void          storageGetCfgPwd(char* out, size_t outLen);
+bool          storageSetCfgPwd(const char* pwd);      // empty string clears
+bool          storageGetCfgLocked();
+void          storageSetCfgLocked(bool locked);
+
 void          storageFactoryReset();

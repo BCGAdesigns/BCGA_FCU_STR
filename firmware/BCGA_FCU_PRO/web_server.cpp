@@ -22,6 +22,16 @@ namespace {
 WebServer server(HTTP_PORT);
 bool running = false;
 
+// Config LOCK runtime state. Persisted lock lives in NVS; this caches the
+// "session unlocked" decision so an unlock survives until next reboot.
+bool sessionUnlocked = true;
+
+bool isLockedNow() {
+  if (!storageHasCfgPwd()) return false;
+  if (!storageGetCfgLocked()) return false;
+  return !sessionUnlocked;
+}
+
 uint16_t clampU(uint16_t v, uint16_t lo, uint16_t hi) {
   if (v < lo) return lo;
   if (v > hi) return hi;
@@ -55,15 +65,22 @@ void handleLoad() {
   d["fw"]       = FW_VERSION;
   d["variant"]  = FW_VARIANT;
   d["ssid"]     = WIFI_SSID_DEFAULT;
-  d["lang"]     = storageGetLang() == LANG_EN ? "en" : "br";
+  d["lang"]     = storageGetLang() == LANG_BR ? "br" : "en";
   d["lastSlot"] = storageGetLastSlot();
   d["slots"]    = SLOT_COUNT;
-  d["shots"]    = (uint32_t)storageGetTotalShots() + (uint32_t)firingShotCount();
+  uint32_t shotsT = storageGetTotalShots();
+  uint32_t shotsS = firingShotCount();
+  d["shotsTotal"]   = shotsT;
+  d["shotsSession"] = shotsS;
+  d["shots"]        = shotsT + shotsS;  // legacy combined field
   JsonObject b = d.createNestedObject("batt");
   b["mv"]    = batteryMv();
   b["cells"] = batteryCells();
   b["low"]   = batteryLow();
   b["cut"]   = batteryCut();
+  JsonObject lk = d.createNestedObject("cfgLock");
+  lk["hasPwd"] = storageHasCfgPwd();
+  lk["locked"] = isLockedNow();
   sendJson(200, d);
 }
 
@@ -82,6 +99,8 @@ void slotToJson(const SlotConfig& c, JsonObject d) {
   d["db"]          = c.db;
   d["rof"]         = c.rofLimit;
   d["semiRofMs"]   = c.semiRofMs;
+  d["is"]          = c.is;
+  d["ip"]          = c.ip;
   d["hallTrigLow"] = c.hallTrigLow;
   d["hallTrigHigh"]= c.hallTrigHigh;
   d["hallSelLow1"] = c.hallSelLow1;
@@ -106,6 +125,7 @@ void handleGetSlot() {
 }
 
 void handleSave() {
+  if (isLockedNow())            { sendErr(401, "locked"); return; }
   if (!server.hasArg("i"))      { sendErr(400, "missing i"); return; }
   if (!server.hasArg("plain"))  { sendErr(400, "no body"); return; }
   uint8_t i = (uint8_t)server.arg("i").toInt();
@@ -137,6 +157,8 @@ void handleSave() {
   if (body.containsKey("db"))          c.db  = clampU((uint16_t)body["db"],  DB_MIN_UNITS, DB_MAX_UNITS);
   if (body.containsKey("rof"))         c.rofLimit   = (uint16_t)constrain((int)body["rof"], 0, 50);
   if (body.containsKey("semiRofMs"))   c.semiRofMs  = (uint16_t)constrain((int)body["semiRofMs"], 0, 500);
+  if (body.containsKey("is"))          c.is = clampU((uint16_t)body["is"], IS_MIN_SEC, IS_MAX_SEC);
+  if (body.containsKey("ip"))          c.ip = clampU((uint16_t)body["ip"], IP_MIN_UNITS, IP_MAX_UNITS);
   if (body.containsKey("hallTrigLow"))  c.hallTrigLow  = clampU((uint16_t)body["hallTrigLow"], 0, 4095);
   if (body.containsKey("hallTrigHigh")) c.hallTrigHigh = clampU((uint16_t)body["hallTrigHigh"], 0, 4095);
   if (body.containsKey("hallSelLow1"))  c.hallSelLow1  = clampU((uint16_t)body["hallSelLow1"], 0, 4095);
@@ -234,13 +256,14 @@ void handleSetLang() {
   if (!server.hasArg("plain")) { sendErr(400, "no body"); return; }
   StaticJsonDocument<64> body;
   if (deserializeJson(body, server.arg("plain"))) { sendErr(400, "bad json"); return; }
-  const char* l = body["lang"] | "br";
-  Language lang = (l[0] == 'e') ? LANG_EN : LANG_BR;
+  const char* l = body["lang"] | "en";
+  Language lang = (l[0] == 'b') ? LANG_BR : LANG_EN;
   storageSetLang(lang);
   StaticJsonDocument<64> r; r["ok"] = true; sendJson(200, r);
 }
 
 void handleSetSlot() {
+  if (isLockedNow())       { sendErr(401, "locked"); return; }
   if (!server.hasArg("i")) { sendErr(400, "missing i"); return; }
   uint8_t i = (uint8_t)server.arg("i").toInt();
   if (i >= SLOT_COUNT)     { sendErr(400, "out of range"); return; }
@@ -251,6 +274,7 @@ void handleSetSlot() {
 }
 
 void handleResetSlot() {
+  if (isLockedNow())       { sendErr(401, "locked"); return; }
   if (!server.hasArg("i")) { sendErr(400, "missing i"); return; }
   uint8_t i = (uint8_t)server.arg("i").toInt();
   if (i >= SLOT_COUNT)     { sendErr(400, "out of range"); return; }
@@ -278,6 +302,53 @@ void handleTrigState() {
   sendJson(200, r);
 }
 
+void handleCfgLock() {
+  // GET → returns status. POST → expects {action:"set"|"lock"|"unlock"|"clear", pwd?}
+  if (server.method() == HTTP_GET) {
+    StaticJsonDocument<128> r;
+    r["ok"]     = true;
+    r["hasPwd"] = storageHasCfgPwd();
+    r["locked"] = isLockedNow();
+    sendJson(200, r);
+    return;
+  }
+  if (!server.hasArg("plain")) { sendErr(400, "no body"); return; }
+  StaticJsonDocument<192> body;
+  if (deserializeJson(body, server.arg("plain"))) { sendErr(400, "bad json"); return; }
+  const char* action = body["action"] | "";
+  const char* pwd    = body["pwd"]    | "";
+
+  if (!strcmp(action, "set")) {
+    if (storageHasCfgPwd() && isLockedNow()) { sendErr(401, "locked"); return; }
+    if (strlen(pwd) < 4) { sendErr(400, "pwd too short"); return; }
+    if (!storageSetCfgPwd(pwd)) { sendErr(500, "nvs write"); return; }
+    sessionUnlocked = true;
+  } else if (!strcmp(action, "lock")) {
+    if (!storageHasCfgPwd()) { sendErr(400, "no pwd set"); return; }
+    storageSetCfgLocked(true);
+    sessionUnlocked = false;
+  } else if (!strcmp(action, "unlock")) {
+    if (!storageHasCfgPwd()) { sendErr(400, "no pwd set"); return; }
+    char stored[33]; storageGetCfgPwd(stored, sizeof(stored));
+    if (strcmp(stored, pwd) != 0) { sendErr(401, "bad pwd"); return; }
+    sessionUnlocked = true;
+  } else if (!strcmp(action, "clear")) {
+    if (isLockedNow()) {
+      char stored[33]; storageGetCfgPwd(stored, sizeof(stored));
+      if (strcmp(stored, pwd) != 0) { sendErr(401, "bad pwd"); return; }
+    }
+    storageSetCfgPwd("");
+    sessionUnlocked = true;
+  } else {
+    sendErr(400, "bad action"); return;
+  }
+  StaticJsonDocument<128> r;
+  r["ok"]     = true;
+  r["hasPwd"] = storageHasCfgPwd();
+  r["locked"] = isLockedNow();
+  sendJson(200, r);
+}
+
 void handleNotFound() {
   // Captive-portal redirect: send the dashboard for any unknown URL.
   handleRoot();
@@ -299,7 +370,12 @@ void webServerBegin() {
   server.on("/setlang",  HTTP_POST, handleSetLang);
   server.on("/setslot",  HTTP_POST, handleSetSlot);
   server.on("/reset",    HTTP_POST, handleResetSlot);
+  server.on("/cfglock",  HTTP_GET,  handleCfgLock);
+  server.on("/cfglock",  HTTP_POST, handleCfgLock);
   server.onNotFound(handleNotFound);
+
+  // Restore persisted lock state on boot.
+  sessionUnlocked = !(storageHasCfgPwd() && storageGetCfgLocked());
   server.begin();
   running = true;
 }

@@ -316,37 +316,58 @@ void setup() {
 
   LOG("Active slot: %u (%s)\n", lastSlot, activeCfg.name);
 
-  // ── Boot WiFi gesture: hold trigger for 5s within first 5s ───────────────
+  // ── Boot gesture: trigger 5 s → WiFi AP, trigger + WiFi button 30 s →
+  // factory reset. Loop runs only while the trigger is being held — a normal
+  // boot (no press) skips it entirely so WiFi auto-start happens immediately.
+  // After 5 s of continuous trigger hold the user gets a countdown chirp every
+  // 5 s; release between 5 s and 30 s starts the WiFi AP. Factory reset only
+  // fires if the WiFi button was held continuously for the full 30 s as well.
   // Skipped on alarm resume — no user is present.
-  if (!bootIsAlarmResume) {
-    const uint32_t BOOT_WINDOW_MS = 5000;
-    const uint32_t BOOT_HOLD_MS   = 5000;
-    uint32_t windowStart = millis();
-    bool triggerHeldAtBoot = false;
-    uint32_t trigHoldStart = 0;
+  if (!bootIsAlarmResume && digitalRead(PIN_TRIG) == LOW) {
+    const uint32_t WIFI_HOLD_MS      = 5000;
+    const uint32_t FACTORY_HOLD_MS   = 30000;
+    const uint32_t COUNTDOWN_BEEP_MS = 5000;
+    uint32_t trigHoldStart = millis();
+    uint32_t btnHoldStart  = (digitalRead(PIN_WIFI_BTN) == LOW) ? trigHoldStart : 0;
+    uint32_t lastBeepAt    = trigHoldStart;
 
-    while ((uint32_t)(millis() - windowStart) < BOOT_WINDOW_MS) {
-      bool trigPressed = (digitalRead(PIN_TRIG) == LOW);
+    while (digitalRead(PIN_TRIG) == LOW) {
+      uint32_t held = (uint32_t)(millis() - trigHoldStart);
+      bool btnPressed = (digitalRead(PIN_WIFI_BTN) == LOW);
 
-      if (trigPressed && !triggerHeldAtBoot) {
-        triggerHeldAtBoot = true;
-        trigHoldStart = millis();
-      } else if (!trigPressed) {
-        triggerHeldAtBoot = false;
-        trigHoldStart = 0;
+      // Track continuous WiFi-button hold separately — factory gesture
+      // requires both trigger AND button held for the full window.
+      if (btnPressed && btnHoldStart == 0) btnHoldStart = millis();
+      else if (!btnPressed)                btnHoldStart = 0;
+
+      if (held >= WIFI_HOLD_MS &&
+          (uint32_t)(millis() - lastBeepAt) >= COUNTDOWN_BEEP_MS) {
+        buzzerPlayCount(1);
+        lastBeepAt = millis();
       }
 
-      if (triggerHeldAtBoot &&
-          (uint32_t)(millis() - trigHoldStart) >= BOOT_HOLD_MS) {
-        wifiStart();
-        buzzerPlayCount(3);
-        uint32_t buzzerWait = millis();
-        while (buzzerBusy() && (uint32_t)(millis() - buzzerWait) < 1500) {
-          buzzerUpdate();
-        }
-        break;
+      bool factoryHoldReady =
+          (held >= FACTORY_HOLD_MS) &&
+          btnHoldStart != 0 &&
+          ((uint32_t)(millis() - btnHoldStart) >= FACTORY_HOLD_MS);
+      if (factoryHoldReady) {
+        LOGLN("Factory reset gesture detected — wiping NVS");
+        buzzerPlay(BUZZ_TEST);   // 1 s sustained tone confirms the reset
+        uint32_t bt = millis();
+        while (buzzerBusy() && (uint32_t)(millis() - bt) < 1500) buzzerUpdate();
+        storageFactoryReset();
+        delay(200);
+        ESP.restart();
       }
       buzzerUpdate();
+    }
+
+    // Released — start WiFi AP if the trigger hold passed the WiFi threshold.
+    if ((uint32_t)(millis() - trigHoldStart) >= WIFI_HOLD_MS) {
+      wifiStart();
+      buzzerPlayCount(3);
+      uint32_t bt = millis();
+      while (buzzerBusy() && (uint32_t)(millis() - bt) < 1500) buzzerUpdate();
     }
   }
 

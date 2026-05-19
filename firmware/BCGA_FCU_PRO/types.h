@@ -53,7 +53,7 @@ enum Language : uint8_t {
 // SLOT CONFIG — persisted to NVS via putBytes/getBytes
 // ============================================================================
 // Bump CONFIG_VERSION when the layout/semantics change; storage will wipe.
-#define SLOT_CONFIG_VERSION 7
+#define SLOT_CONFIG_VERSION 8
 
 struct __attribute__((packed)) SlotConfig {
   uint8_t  version;          // SLOT_CONFIG_VERSION
@@ -82,6 +82,12 @@ struct __attribute__((packed)) SlotConfig {
 
   uint16_t rofLimit;         // rounds/sec cap, 0 = unlimited
   uint16_t semiRofMs;        // ms to ignore trigger after semi shot (0 = disabled)
+
+  // Anti-stiction (Polarstar iS/iP). After `is` seconds idle, the next shot's
+  // poppet pulse gets `ip * 0.1 ms` added to break o-ring static friction.
+  // Set ip=0 to disable.
+  uint16_t is;               // Anti-stiction Idle threshold, seconds (0..IS_MAX_SEC)
+  uint16_t ip;               // Anti-stiction Pulse boost, units of 0.1 ms (0..IP_MAX_UNITS)
 
   // Hall thresholds (ADC counts 0..4095)
   uint16_t hallTrigLow;      // trig below this = released

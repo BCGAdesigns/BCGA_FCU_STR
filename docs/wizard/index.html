@@ -1,0 +1,184 @@
+<!DOCTYPE html>
+<html lang="pt-BR">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
+  <meta name="theme-color" content="#1a1f1a">
+  <title>BCGA FCU — Setup Wizard</title>
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+  <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700;800&display=swap" rel="stylesheet">
+  <link rel="stylesheet" href="wizard.css">
+</head>
+<body>
+  <header class="topbar">
+    <div class="brand">BCGA FCU · Setup Wizard</div>
+    <button id="langToggle" class="lang" type="button" aria-label="Toggle language">PT / EN</button>
+  </header>
+
+  <main id="app" class="card">
+
+    <nav class="steps" aria-label="Progress">
+      <ol>
+        <li data-step="1"><span class="dot"></span><span class="lbl" data-i18n="steps.1"></span></li>
+        <li data-step="2"><span class="dot"></span><span class="lbl" data-i18n="steps.2"></span></li>
+        <li data-step="3"><span class="dot"></span><span class="lbl" data-i18n="steps.3"></span></li>
+        <li data-step="4"><span class="dot"></span><span class="lbl" data-i18n="steps.4"></span></li>
+        <li data-step="5"><span class="dot"></span><span class="lbl" data-i18n="steps.5"></span></li>
+      </ol>
+    </nav>
+
+    <!-- STEP 1 · Engine pick ------------------------------------------------ -->
+    <section class="step" data-step="1" hidden>
+      <h1 data-i18n="s1.title"></h1>
+      <p class="lead" data-i18n="s1.lead"></p>
+      <div class="choice-grid">
+        <button class="choice" data-engine="1" type="button">
+          <div class="choice-head">S8PA</div>
+          <div class="choice-sub" data-i18n="s1.s8.sub"></div>
+          <div class="choice-body" data-i18n="s1.s8.body"></div>
+        </button>
+        <button class="choice" data-engine="2" type="button">
+          <div class="choice-head">D8PA</div>
+          <div class="choice-sub" data-i18n="s1.d8.sub"></div>
+          <div class="choice-body" data-i18n="s1.d8.body"></div>
+        </button>
+      </div>
+    </section>
+
+    <!-- STEP 2 · Target FPS ------------------------------------------------- -->
+    <section class="step" data-step="2" hidden>
+      <h1 data-i18n="s2.title"></h1>
+      <p class="lead" data-i18n="s2.lead"></p>
+      <div class="row">
+        <label for="fps" data-i18n="s2.fpsLabel"></label>
+        <input id="fps" type="number" min="200" max="600" step="5" value="350" inputmode="numeric">
+        <span class="unit">FPS</span>
+      </div>
+      <div class="row">
+        <label for="bbMass" data-i18n="s2.bbLabel"></label>
+        <input id="bbMass" type="number" min="0.12" max="0.50" step="0.01" value="0.28" inputmode="decimal">
+        <span class="unit">g</span>
+      </div>
+      <div class="energy-out">
+        <span data-i18n="s2.energy"></span>
+        <strong id="energyJ">—</strong> J
+        (<span data-i18n="s2.velocity"></span> <strong id="velocityMs">—</strong> m/s)
+      </div>
+      <h2 data-i18n="s2.startTitle"></h2>
+      <div class="preset" id="preset"></div>
+      <p class="muted" data-i18n="s2.principle"></p>
+      <div class="actions">
+        <button class="btn btn-ghost" data-goto="1" data-i18n="nav.back"></button>
+        <button class="btn btn-primary" data-goto="3" data-i18n="nav.next"></button>
+      </div>
+    </section>
+
+    <!-- STEP 3 · FPS achieved? branching ----------------------------------- -->
+    <section class="step" data-step="3" hidden>
+      <h1 data-i18n="s3.title"></h1>
+      <p class="lead" data-i18n="s3.lead"></p>
+      <div class="branch">
+        <button class="branch-btn branch-ok" id="fpsOk" type="button">
+          <div class="b-head" data-i18n="s3.okHead"></div>
+          <div class="b-sub" data-i18n="s3.okSub"></div>
+        </button>
+        <button class="branch-btn branch-low" id="fpsLow" type="button">
+          <div class="b-head" data-i18n="s3.lowHead"></div>
+          <div class="b-sub" data-i18n="s3.lowSub"></div>
+        </button>
+      </div>
+      <div id="escalation" class="escalation" hidden>
+        <h2 data-i18n="s3.escTitle"></h2>
+        <ol>
+          <li data-i18n="s3.esc1"></li>
+          <li data-i18n="s3.esc2"></li>
+          <li data-i18n="s3.esc3"></li>
+        </ol>
+        <p class="warn" data-i18n="s3.escWarn"></p>
+      </div>
+      <div class="actions">
+        <button class="btn btn-ghost" data-goto="2" data-i18n="nav.back"></button>
+      </div>
+    </section>
+
+    <!-- STEP 4 · Fine-tune timings ----------------------------------------- -->
+    <section class="step" data-step="4" hidden>
+      <h1 data-i18n="s4.title"></h1>
+      <p class="lead" data-i18n="s4.lead"></p>
+
+      <!-- DN panel — D8PA only -->
+      <article class="timing" data-timing="dn" data-d8pa-only>
+        <header><h2>DN — <span data-i18n="s4.dn.name"></span></h2></header>
+        <p data-i18n="s4.dn.desc"></p>
+        <div class="symptom" data-i18n="s4.dn.rule"></div>
+        <div class="warn" data-i18n="s4.dn.warn"></div>
+      </article>
+
+      <!-- DR panel -->
+      <article class="timing" data-timing="dr">
+        <header><h2>DR — <span data-i18n="s4.dr.name"></span></h2></header>
+        <p data-i18n="s4.dr.desc"></p>
+        <div class="symptom" data-i18n="s4.dr.rule"></div>
+        <div class="warn" data-i18n="s4.dr.warn"></div>
+      </article>
+
+      <!-- DP panel -->
+      <article class="timing" data-timing="dp">
+        <header><h2>DP — <span data-i18n="s4.dp.name"></span></h2></header>
+        <p data-i18n="s4.dp.desc"></p>
+        <div class="symptom" data-i18n="s4.dp.rule"></div>
+        <div class="warn" data-i18n="s4.dp.warn"></div>
+      </article>
+
+      <!-- DB panel — D8PA only -->
+      <article class="timing" data-timing="db" data-d8pa-only>
+        <header><h2>DB — <span data-i18n="s4.db.name"></span></h2></header>
+        <p data-i18n="s4.db.desc"></p>
+        <div class="unit-box">
+          <span data-i18n="s4.db.unit"></span>
+          <table>
+            <thead><tr><th>Units</th><th data-i18n="s4.db.ms"></th></tr></thead>
+            <tbody>
+              <tr><td>20</td><td>2.0</td></tr>
+              <tr><td>50</td><td>5.0</td></tr>
+              <tr><td>100</td><td>10.0</td></tr>
+              <tr><td>200</td><td>20.0</td></tr>
+              <tr><td>800</td><td>80.0</td></tr>
+            </tbody>
+          </table>
+        </div>
+        <div class="symptom" data-i18n="s4.db.rule"></div>
+        <div class="warn" data-i18n="s4.db.warn"></div>
+      </article>
+
+      <div class="actions">
+        <button class="btn btn-ghost" data-goto="3" data-i18n="nav.back"></button>
+        <button class="btn btn-primary" data-goto="5" data-i18n="nav.next"></button>
+      </div>
+    </section>
+
+    <!-- STEP 5 · Summary --------------------------------------------------- -->
+    <section class="step" data-step="5" hidden>
+      <h1 data-i18n="s5.title"></h1>
+      <p class="lead" data-i18n="s5.lead"></p>
+      <div id="summary" class="summary"></div>
+      <p class="warn" data-i18n="s5.dlNote"></p>
+      <div class="actions">
+        <button class="btn btn-ghost" data-goto="4" data-i18n="nav.back"></button>
+        <button class="btn btn-primary" id="copyJson" type="button" data-i18n="s5.copyJson"></button>
+        <button class="btn btn-ghost" id="restart" type="button" data-i18n="s5.restart"></button>
+      </div>
+    </section>
+
+  </main>
+
+  <footer class="foot">
+    <a href="https://bcgaairsoft.com" target="_blank" rel="noopener">bcgaairsoft.com</a>
+    ·
+    <a href="https://github.com/BCGAdesigns/BCGA_FCU_STR" target="_blank" rel="noopener">GitHub</a>
+  </footer>
+
+  <script src="wizard.js"></script>
+</body>
+</html>

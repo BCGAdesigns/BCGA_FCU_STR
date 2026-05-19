@@ -1,0 +1,303 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8" />
+<meta name="viewport" content="width=device-width,initial-scale=1,viewport-fit=cover" />
+<title>BCGA FCU STR</title>
+<link rel="stylesheet" href="style.css" />
+</head>
+<body class="variant-str">
+
+<header>
+  <div class="brand">
+    <svg width="32" height="32" viewBox="0 0 64 64" aria-hidden="true">
+      <path fill="#8aab47" fill-rule="evenodd" d="M28 2 L36 2 L37 9 L43 11 L48 6 L54 12 L49 17 L51 23 L58 24 L58 32 L51 33 L49 39 L54 44 L48 50 L43 45 L37 47 L36 54 L28 54 L27 47 L21 45 L16 50 L10 44 L15 39 L13 33 L6 32 L6 24 L13 23 L15 17 L10 12 L16 6 L21 11 L27 9 Z M32 18 a10 10 0 1 0 0.01 0 Z"/>
+    </svg>
+    <div class="txt">
+      <div class="name" id="hdrName">BCGA FCU</div>
+      <div class="sub" id="hdrSub">· · ·</div>
+    </div>
+  </div>
+  <div class="lang">
+    <button id="langBR" type="button">BR</button>
+    <button id="langEN" class="on" type="button">EN</button>
+  </div>
+</header>
+
+<main>
+
+  <div class="slotPick" id="slotPick"></div>
+
+  <!-- Statistics ======================================================== -->
+  <section>
+    <h2><span data-i="statsSec">Statistics</span></h2>
+    <div class="stat-grid">
+      <div class="stat">
+        <div class="stat-label" data-i="statShotsSession">Session shots</div>
+        <div class="stat-value" id="statShotsSessionVal">—</div>
+      </div>
+      <div class="stat">
+        <div class="stat-label" data-i="statShotsTotal">Total shots</div>
+        <div class="stat-value" id="statShotsTotalVal">—</div>
+      </div>
+      <div class="stat lube">
+        <div class="stat-label" data-i="statLube">Next lubrication</div>
+        <div class="lube-bar"><div class="lube-fill" id="lubeFill"></div></div>
+        <div class="lube-txt" id="lubeTxt">— / 10 000</div>
+      </div>
+    </div>
+  </section>
+
+  <!-- Engine ============================================================ -->
+  <section>
+    <h2><span data-i="solSec">Engine</span></h2>
+    <div class="row">
+      <label data-i="slotName">Slot name</label>
+      <div class="ctrl"><input type="text" id="slotName" maxlength="15" /></div>
+    </div>
+    <div class="radio-row">
+      <div class="radio-card" id="solS">
+        <div data-i="solSHead">Single Solenoid S8PA</div>
+        <span class="small" data-i="solS">1 solenoid (Jack, Backdraft)</span>
+      </div>
+      <div class="radio-card" id="solD">
+        <div data-i="solDHead">Dual Solenoid D8PA</div>
+        <span class="small" data-i="solD">2 solenoids (F2, Pulsar)</span>
+      </div>
+    </div>
+  </section>
+
+  <!-- Timings =========================================================== -->
+  <section>
+    <h2><span data-i="timSec">Timings</span></h2>
+    <div class="row" id="rowDn">
+      <label>DN <button class="help" data-h="dn" type="button">?</button></label>
+      <div class="ctrl"><div class="pair" style="width:100%"><input type="range" id="dnR" min="2" max="80" /><input type="number" id="dnN" min="2" max="80" /></div></div>
+    </div>
+    <div class="row" id="rowDr">
+      <label>DR <button class="help" data-h="dr" type="button">?</button></label>
+      <div class="ctrl"><div class="pair" style="width:100%"><input type="range" id="drR" min="2" max="80" /><input type="number" id="drN" min="2" max="80" /></div></div>
+    </div>
+    <div class="row" id="rowDp">
+      <label>DP <button class="help" data-h="dp" type="button">?</button></label>
+      <div class="ctrl"><div class="pair" style="width:100%"><input type="range" id="dpR" min="2" max="80" /><input type="number" id="dpN" min="2" max="80" /></div></div>
+    </div>
+    <div class="row">
+      <label data-i="rofLbl">ROF max (rps) <button class="help" data-h="rof" type="button">?</button></label>
+      <div class="ctrl"><input type="number" id="rofN" min="0" max="50" /></div>
+    </div>
+    <div class="rofTheoBox">
+      <span data-i="rofTheoLbl">Theoretical ROF <button class="help" data-h="rofTheo" type="button">?</button></span>
+      <span class="v" id="rofTheoVal">— rps</span>
+    </div>
+  </section>
+
+  <!-- Selector ========================================================== -->
+  <section>
+    <h2><span data-i="selSec">Selector</span></h2>
+    <div class="row"><label data-i="selIn">Selector input <button class="help" data-h="selMode" type="button">?</button></label><div class="ctrl"><select id="selMode"><option value="0" data-i="sw">Microswitch</option><option value="1" data-i="hl">Hall (analog)</option></select></div></div>
+    <div class="row"><label data-i="pos1">Position 1 <button class="help" data-h="pos" type="button">?</button></label><div class="ctrl"><select id="selPos1"></select></div></div>
+    <div class="row"><label data-i="pos2">Position 2 <button class="help" data-h="pos" type="button">?</button></label><div class="ctrl"><select id="selPos2"></select></div></div>
+    <div class="row">
+      <label data-i="sel3">3-position selector <button class="help" data-h="sel3" type="button">?</button></label>
+      <div class="ctrl"><label class="toggle"><input type="checkbox" id="sel3pos" /> <span data-i="sel3H">enable Pos 3 (auto-Hall)</span></label></div>
+    </div>
+    <div class="row" id="rowPos3"><label data-i="pos3">Position 3</label><div class="ctrl"><select id="selPos3"></select></div></div>
+  </section>
+
+  <!-- Functions ========================================================= -->
+  <section>
+    <h2><span data-i="funcSec">Functions</span></h2>
+    <div class="row"><label data-i="trigIn">Trigger <button class="help" data-h="trigMode" type="button">?</button></label><div class="ctrl"><select id="trigMode"><option value="0" data-i="sw">Microswitch</option><option value="1" data-i="hl">Hall (analog)</option></select></div></div>
+    <div class="row hide" id="rowInvert"><label data-i="invTrig">Invert trigger</label><div class="ctrl"><label class="toggle"><input type="checkbox" id="invertTrig" /></label></div></div>
+    <div class="row" id="rowMosSwap"><label data-i="mosSwap">Swap MOS 1 ↔ 2 <button class="help" data-h="mosSwap" type="button">?</button></label><div class="ctrl"><label class="toggle"><input type="checkbox" id="mosfetSwap" /> <span data-i="mosSwapH">fix swapped wiring</span></label></div></div>
+    <div class="row"><label data-i="silent">Silent mode <button class="help" data-h="silent" type="button">?</button></label><div class="ctrl"><label class="toggle"><input type="checkbox" id="silent" /> <span data-i="silentH">skip buzzer while in use</span></label></div></div>
+  </section>
+
+  <!-- Hall sensitivity & calibration (auto-show) ========================= -->
+  <section id="secSens" class="hide">
+    <h2><span data-i="sensSec">Trigger sensitivity</span> <button class="help" data-h="sens" type="button">?</button></h2>
+    <div class="muted" data-i="sensHelp">Pull trigger to the desired fire point and click Save.</div>
+    <div class="live"><span class="lbl" data-i="liveAdc">ADC reading</span><span id="sensLive">0</span></div>
+    <div class="row">
+      <label data-i="curPoint">Current point</label>
+      <div class="ctrl"><span class="muted" id="curPoint">—</span></div>
+    </div>
+    <div class="row">
+      <div></div>
+      <div class="ctrl"><button class="btn" id="sensSaveBtn" type="button" data-i="savePoint">Save point</button></div>
+    </div>
+  </section>
+
+  <section id="secCalTrig" class="hide">
+    <h2><span data-i="calTrigSec">Trigger calibration</span></h2>
+    <div class="muted" data-i="calTrigHelp">Start with noise (fires 1 test cycle). Don't pull the trigger.</div>
+    <div class="row" style="margin-top:10px">
+      <label data-i="calNoise">Noise <button class="help" data-h="noise" type="button">?</button></label>
+      <div class="ctrl"><button class="btn ghost sm" id="calTrigNoiseBtn" type="button" data-i="calBtn">Calibrate</button>
+      <span class="muted" id="calTrigNoiseVals">±—</span></div>
+    </div>
+    <div class="row">
+      <label data-i="calTrig">Trigger <button class="help" data-h="cal" type="button">?</button></label>
+      <div class="ctrl"><button class="btn ghost sm" id="calTrigBtn" type="button" data-i="calBtn">Calibrate</button>
+      <span class="muted" id="calTrigVals">low=— high=—</span></div>
+    </div>
+  </section>
+
+  <section id="secCalSel" class="hide">
+    <h2><span data-i="calSelSec">Selector calibration</span></h2>
+    <div class="muted" data-i="calSelHelp">Start with noise (fires 1 test cycle). Don't touch the selector.</div>
+    <div class="row" style="margin-top:10px">
+      <label data-i="calNoise">Noise <button class="help" data-h="noise" type="button">?</button></label>
+      <div class="ctrl"><button class="btn ghost sm" id="calSelNoiseBtn" type="button" data-i="calBtn">Calibrate</button>
+      <span class="muted" id="calSelNoiseVals">±—</span></div>
+    </div>
+    <div class="row">
+      <label data-i="calSel">Selector (3 pos) <button class="help" data-h="cal" type="button">?</button></label>
+      <div class="ctrl"><button class="btn ghost sm" id="calSelBtn" type="button" data-i="calBtn">Calibrate</button>
+      <span class="muted" id="calSelVals">—</span></div>
+    </div>
+  </section>
+
+  <!-- Advanced ========================================================== -->
+  <section>
+    <h2><span data-i="advSec">Advanced</span></h2>
+    <div class="row">
+      <label>IS <button class="help" data-h="is" type="button">?</button></label>
+      <div class="ctrl"><div class="stepper">
+        <button class="btn ghost" data-step="is" data-dir="-1" type="button">−</button>
+        <span class="stepper-val" id="isVal">— s</span>
+        <button class="btn ghost" data-step="is" data-dir="1" type="button">+</button>
+      </div></div>
+    </div>
+    <div class="row">
+      <label>IP <button class="help" data-h="ip" type="button">?</button></label>
+      <div class="ctrl"><div class="stepper">
+        <button class="btn ghost" data-step="ip" data-dir="-1" type="button">−</button>
+        <span class="stepper-val" id="ipVal">— ms</span>
+        <button class="btn ghost" data-step="ip" data-dir="1" type="button">+</button>
+      </div></div>
+    </div>
+    <div class="row" id="rowDb">
+      <label>DB <button class="help" data-h="db" type="button">?</button></label>
+      <div class="ctrl"><div class="pair" style="width:100%"><input type="range" id="dbR" min="5" max="150" /><input type="number" id="dbN" min="5" max="150" /></div></div>
+    </div>
+    <div class="row">
+      <label data-i="semiRof">Semi Max ROF (ms) <button class="help" data-h="semiRof" type="button">?</button></label>
+      <div class="ctrl"><input type="number" id="semiRofN" min="0" max="500" /></div>
+    </div>
+    <div class="row">
+      <label data-i="cfgLock">Config LOCK <button class="help" data-h="cfgLock" type="button">?</button></label>
+      <div class="ctrl">
+        <span class="muted" id="cfgLockStatus">—</span>
+      </div>
+    </div>
+    <div class="row" id="rowCfgLockSet">
+      <label data-i="cfgLockSetLbl">New password</label>
+      <div class="ctrl">
+        <input type="password" id="cfgLockPwd" minlength="4" maxlength="32" placeholder="****" />
+        <button class="btn ghost sm" id="cfgLockSetBtn" type="button" data-i="cfgLockSet">Set</button>
+      </div>
+    </div>
+    <div class="row hide" id="rowCfgLockManage">
+      <div></div>
+      <div class="ctrl">
+        <button class="btn warn sm" id="cfgLockLockBtn" type="button" data-i="cfgLockLock">Lock now</button>
+        <button class="btn ghost sm" id="cfgLockClearBtn" type="button" data-i="cfgLockClear">Clear password</button>
+      </div>
+    </div>
+  </section>
+
+  <!-- Diagnostics ======================================================= -->
+  <section>
+    <h2><span data-i="diagSec">Diagnostics</span></h2>
+    <div class="row">
+      <label data-i="buzz">Buzzer <button class="help" data-h="buzz" type="button">?</button></label>
+      <div class="ctrl">
+        <select id="buzzPick">
+          <option value="1">Boot</option>
+          <option value="2" data-i="bzMode">Mode change</option>
+          <option value="3" data-i="bzSave">Save OK</option>
+          <option value="4" data-i="bzWifi">WiFi ON</option>
+          <option value="7" data-i="bzTest">Test</option>
+        </select>
+        <button class="btn sm" id="buzzPlay" type="button" data-i="play">Play</button>
+      </div>
+    </div>
+    <div class="row">
+      <label data-i="mosTest">MOSFET test (2s) <button class="help" data-h="mosTest" type="button">?</button></label>
+      <div class="ctrl">
+        <button class="btn danger sm" id="mos1Btn" type="button">SOL 1 (Poppet)</button>
+        <button class="btn danger sm" id="mos2Btn" type="button">SOL 2 (Nozzle)</button>
+      </div>
+    </div>
+    <div class="row">
+      <label data-i="trigTest">Trigger test <button class="help" data-h="trigTest" type="button">?</button></label>
+      <div class="ctrl">
+        <button class="btn ghost sm" id="trigTestBtn" type="button" data-i="trigTestStart">Start</button>
+        <span class="trigDot" id="trigTestDot"></span>
+        <span class="muted" id="trigTestMsg" data-i="trigTestIdle">—</span>
+      </div>
+    </div>
+  </section>
+
+  <!-- WiFi ============================================================== -->
+  <section>
+    <h2><span data-i="wifiSec">WiFi</span></h2>
+    <div class="row">
+      <label data-i="newPwd">New password <button class="help" data-h="pwd" type="button">?</button></label>
+      <div class="ctrl"><input type="password" id="wifiPwd" minlength="8" maxlength="32" placeholder="********" /></div>
+    </div>
+    <div class="row"><div></div><div class="ctrl"><button class="btn ghost" id="setPwdBtn" type="button" data-i="changePwd">Change password</button></div></div>
+  </section>
+
+</main>
+
+<div class="toolbar">
+  <button class="btn warn" id="btnReset" type="button" data-i="resetSlot">Reset slot</button>
+  <div class="grp">
+    <button class="btn ghost" id="btnReload" type="button" data-i="reload">Reload</button>
+    <button class="btn" id="btnSave" type="button" data-i="save">Save slot</button>
+  </div>
+</div>
+
+<footer>
+  <a href="https://bcgaairsoft.com.br" target="_blank" rel="noopener">bcgaairsoft.com.br</a>
+  &nbsp;•&nbsp; <span id="ftVer">v—</span>
+  &nbsp;•&nbsp; <span id="ftVar">—</span>
+</footer>
+
+<div id="toast" class="toast">OK</div>
+
+<div id="lockOver" class="overlay hide">
+  <div class="box">
+    <h3 data-i="lockTitle">Configuration locked</h3>
+    <p class="muted" data-i="lockMsg">Enter the password to unlock the FCU configuration.</p>
+    <div class="row" style="margin-top:10px">
+      <label data-i="lockPwd">Password</label>
+      <div class="ctrl"><input type="password" id="lockPwdInput" maxlength="32" placeholder="****" /></div>
+    </div>
+    <p class="muted" data-i="lockForgotHint" style="margin-top:8px">Forgot the password? Hold the trigger at boot for 30 s to factory-reset.</p>
+    <div style="display:flex;gap:8px;justify-content:flex-end;flex-wrap:wrap;margin-top:8px">
+      <button class="btn" id="lockUnlockBtn" type="button" data-i="lockUnlock">Unlock</button>
+    </div>
+  </div>
+</div>
+
+<div id="calOver" class="overlay hide">
+  <div class="box">
+    <h3 id="calTitle">Calibration</h3>
+    <div class="steps"><div class="dot on" id="step1"></div><div class="dot" id="step2"></div><div class="dot" id="step3"></div></div>
+    <div class="muted" id="calMsg">—</div>
+    <div class="live"><span class="lbl" data-i="liveAdc">ADC reading</span><span id="liveVal">0</span></div>
+    <div style="display:flex;gap:8px;justify-content:flex-end;flex-wrap:wrap">
+      <button class="btn ghost" id="calCancel" type="button" data-i="cancel">Cancel</button>
+      <button class="btn" id="calNext" type="button" data-i="capture">Capture</button>
+    </div>
+  </div>
+</div>
+
+<script src="mock.js"></script>
+<script src="app.js"></script>
+</body>
+</html>

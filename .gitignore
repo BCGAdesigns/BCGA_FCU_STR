@@ -1,0 +1,5 @@
+# Local build tools / dev sources — kept on disk, not published
+/tools/
+/build_manual_pdfs.py
+/firmware/web_ui_dev/
+/docs/wizard-v2-source/
